@@ -1,3 +1,4 @@
+#pragma once
 #include "channel.h"
 #include "linked_list.h"
 
