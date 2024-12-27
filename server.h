@@ -9,7 +9,7 @@ typedef struct fd_info
     int listen_fd;
     int client_fd;
 
-} fd_info;
+} fd_info_t;
 
 /**
  * @brief 初始化一个监听socket_fd并将其返回
@@ -29,7 +29,7 @@ int run_epoll(int listen_fd);
 int accept_client(int epoll_fd, int listen_fd);
 
 /**
- * @param fdInfo FdInfo类型数据
+ * @param fd_info FdInfo类型数据
  * @note 使用完fdInfo后，需要释放
  */
 void *thread_accept_client(void *arg_fd_info);
@@ -61,7 +61,7 @@ void *thread_recv_request(void *arg_fd_info);
  */
 int send_response_header(int client_fd, int status, const char *description, const char *type, int len);
 
-int handle_request(int client_fd, linked_list *list);
+int handle_request(int client_fd, linked_list_t *list);
 
 int send_file(int client_fd, char *file_name);
 

@@ -130,23 +130,23 @@ int run_epoll(int listen_fd)
         {
             int fd = epevents[i].data.fd;
 
-            // 构造一个FdInfo对象，为线程函数使用
-            fd_info *fdinfo = (fd_info *)malloc(sizeof(fd_info));
-            fdinfo->listen_fd = listen_fd;
-            fdinfo->epoll_fd = epoll_fd;
+            // 构造一个fd_info对象，为线程函数使用
+            fd_info_t *fd_info = (fd_info_t *)malloc(sizeof(fd_info_t));
+            fd_info->listen_fd = listen_fd;
+            fd_info->epoll_fd = epoll_fd;
 
             // 获取事件的data的fd，判断是否是监听的fd
             if (fd == listen_fd)
             {
                 // accept_client(epoll_fd, listen_fd);
-                pthread_create(&fdinfo->tid, NULL, thread_accept_client, fdinfo);
+                pthread_create(&fd_info->tid, NULL, thread_accept_client, fd_info);
             }
             else
             {
                 // 如果不是监听的fd，说明是其他的通信fd，在此作处理
                 // recv_request(epoll_fd, fd);
-                fdinfo->client_fd = fd;
-                pthread_create(&fdinfo->tid, NULL, thread_recv_request, fdinfo);
+                fd_info->client_fd = fd;
+                pthread_create(&fd_info->tid, NULL, thread_recv_request, fd_info);
             }
         }
     }
@@ -196,7 +196,7 @@ char *content_type_get(const char *file_name)
     return "text/plain";
 }
 
-int handle_request(int client_fd, linked_list *list)
+int handle_request(int client_fd, linked_list_t *list)
 {
 
     // 请求行示例：
@@ -210,7 +210,7 @@ int handle_request(int client_fd, linked_list *list)
     // Priority: u=0, i
     // Upgrade-Insecure-Requests: 1
 
-    linked_list_node *n = list->head;
+    linked_list_node_t *n = list->head;
     // 此处的list中包含了请求的所有字符，如果遇到超长字符串，需要遍历每一个元素，使用动态分配将他们拼接为一个完整的字符串
     // 拼接的原因：下面需要对请求进行解析，如果不拼接，很有可能造成字符串截断导致解析错误
     // 对拼接好的字符串使用strtok以\r\n截取子字符串
@@ -406,8 +406,8 @@ int send_dir(int client_fd, char *dir_name)
 
 void *thread_accept_client(void *arg_fd_info)
 {
-    fd_info *fi = (fd_info *)arg_fd_info;
-    accept_client(fi->epoll_fd, fi->listen_fd);
+    fd_info_t *fd_info = (fd_info_t *)arg_fd_info;
+    accept_client(fd_info->epoll_fd, fd_info->listen_fd);
     free(arg_fd_info);
     return NULL;
 }
@@ -416,7 +416,7 @@ int recv_request(int epoll_fd, int client_fd)
 {
     printf("\tclient fd %d request\n", client_fd);
 
-    linked_list llist = linked_list_create();
+    linked_list_t llist = linked_list_create();
 
     char buf[1024] = {0};
     int len;
@@ -447,8 +447,8 @@ int recv_request(int epoll_fd, int client_fd)
 
 void *thread_recv_request(void *arg_fd_info)
 {
-    fd_info *fi = (fd_info *)arg_fd_info;
-    recv_request(fi->epoll_fd, fi->client_fd);
+    fd_info_t *fd_info = (fd_info_t *)arg_fd_info;
+    recv_request(fd_info->epoll_fd, fd_info->client_fd);
     free(arg_fd_info);
     return NULL;
 }
