@@ -433,6 +433,7 @@ int recv_request(int epoll_fd, int client_fd)
     {
         // 解析请求内容
         handle_request(client_fd, &llist);
+        linked_list_destroy(&llist);
     }
     else if (len == 0)
     {
