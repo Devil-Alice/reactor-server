@@ -17,13 +17,13 @@ channel_t *channel_init(int fd, int events, channel_handle_func rcallback, chann
 int enable_channel_write_event(channel_t *channel, bool flag)
 {
     if (flag == true)
-        channel->events |= WRITE_EVENT;
+        channel->events |= FD_EVENT_WRITE_EVENT;
     else 
-        channel->events &= ~WRITE_EVENT;
+        channel->events &= ~FD_EVENT_WRITE_EVENT;
     return 0;
 }
 
 bool is_enable_channel_write_event(channel_t *channel)
 {
-    return channel->events & WRITE_EVENT;
+    return channel->events & FD_EVENT_WRITE_EVENT;
 }

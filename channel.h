@@ -3,9 +3,9 @@
 
 enum FD_EVENT
 {
-     TIMEOUT = 0x01,
-     READ_EVENT = 0x02,
-     WRITE_EVENT = 0x04
+    FD_EVENT_TIMEOUT = 0x01,
+    FD_EVENT_READ_EVENT = 0x02,
+    FD_EVENT_WRITE_EVENT = 0x04
 };
 
 typedef void *(*channel_handle_func)(int arg);
@@ -14,6 +14,7 @@ typedef struct channel
 {
     int fd;
     int events;
+    void *args;
     channel_handle_func read_callback;
     channel_handle_func write_callback;
 } channel_t;
