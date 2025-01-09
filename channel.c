@@ -4,13 +4,14 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 
-channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback)
+channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args)
 {
     channel_t *channel = (channel_t *)malloc(sizeof(channel_t));
     channel->fd = fd;
     channel->events = events;
     channel->read_callback = rcallback;
     channel->write_callback = wcallback;
+    channel->args = args;
     return NULL;
 }
 

@@ -19,7 +19,7 @@ typedef struct channel
     channel_handle_func write_callback;
 } channel_t;
 
-channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback);
+channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args);
 
 int enable_channel_write_event(channel_t *channel, bool flag);
 

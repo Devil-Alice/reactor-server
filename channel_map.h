@@ -11,9 +11,7 @@ typedef struct channel_map
 } channel_map_t;
 
 channel_map_t *channel_map_create(int capacity);
-
 int channel_map_expand(channel_map_t *channel_map, int capacity);
-
 int channel_map_add(channel_map_t *channel_map, int fd, channel_t *channel);
-
+int channel_map_remove(channel_map_t *channel_map, int fd);
 void channel_map_destroy(channel_map_t *channel_map);

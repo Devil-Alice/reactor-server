@@ -80,11 +80,11 @@ static int epoll_dispatcher_dispatch(event_loop_t *event_loop, int timeout_ms)
 
         // 触发了读事件
         if (events & EPOLLIN)
-            event_loop_active(event_loop, fd, FD_EVENT_READ_EVENT);
+            event_loop_process_event(event_loop, fd, FD_EVENT_READ_EVENT);
 
         // 触发了写事件
         if (events & EPOLLOUT)
-            event_loop_active(event_loop, fd, FD_EVENT_WRITE_EVENT);
+            event_loop_process_event(event_loop, fd, FD_EVENT_WRITE_EVENT);
     }
     return 0;
 }
