@@ -37,8 +37,9 @@ event_loop_t *event_loop_create(char *thread_name)
     int ret = socketpair(AF_LOCAL, SOCK_STREAM, 0, event_loop->socket_pair);
     if (ret == -1)
     {
+        free(event_loop);
         perror("event_loop_create socketpair");
-        return -1;
+        return NULL;
     }
 
     // 创建了socket_pair后，将需要对这个fd进行监听，所以我们需要构造一个channel
@@ -46,7 +47,7 @@ event_loop_t *event_loop_create(char *thread_name)
 
     // 将这个channel添加到任务队列中，才能监听
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
-    return NULL;
+    return event_loop;
 }
 
 int event_loop_run(event_loop_t *event_loop)
