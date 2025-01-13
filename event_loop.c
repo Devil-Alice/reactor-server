@@ -43,7 +43,7 @@ event_loop_t *event_loop_create(char *thread_name)
     }
 
     // 创建了socket_pair后，将需要对这个fd进行监听，所以我们需要构造一个channel
-    channel_t *channel = channel_init(event_loop->socket_pair[1], FD_EVENT_READ_EVENT, event_loop_socket_pair_read, NULL, event_loop);
+    channel_t *channel = channel_create(event_loop->socket_pair[1], CHANNEL_EVENT_READ, event_loop_socket_pair_read, NULL, event_loop);
 
     // 将这个channel添加到任务队列中，才能监听
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
@@ -183,10 +183,10 @@ int event_loop_process_event(event_loop_t *event_loop, int fd, int type)
     channel_t *channel = event_loop->channel_map->list[fd];
 
     // 根据传入的type判断执行读还是写回调
-    if (type == FD_EVENT_READ_EVENT)
+    if (type == CHANNEL_EVENT_READ)
         channel->read_callback(channel->args);
 
-    if (type == FD_EVENT_WRITE_EVENT)
+    if (type == CHANNEL_EVENT_WRITE)
         channel->write_callback(channel->args);
 
     return 0;

@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-thread_pool_t *thread_pool_create(event_loop_t *event_loop, int capacity)
+thread_pool_t *thread_pool_create(event_loop_t *main_event_loop, int capacity)
 {
 
     thread_pool_t *thread_pool = (thread_pool_t *)malloc(sizeof(thread_pool_t));
-    thread_pool->main_event_loop = event_loop;
+    thread_pool->main_event_loop = main_event_loop;
     thread_pool->is_start = false;
     thread_pool->capacity = capacity;
     thread_pool->poll_index = 0;

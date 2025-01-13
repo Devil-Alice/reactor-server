@@ -31,4 +31,4 @@ int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, const char *buf);
 /**
  * @param size 扩容的大小
  */
-int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int size);
+int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size);

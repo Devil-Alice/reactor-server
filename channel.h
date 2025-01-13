@@ -1,14 +1,14 @@
 #pragma once
 #include <stdbool.h>
 
-enum FD_EVENT
+enum CHANNEL_EVENT
 {
-    FD_EVENT_TIMEOUT = 0x01,
-    FD_EVENT_READ_EVENT = 0x02,
-    FD_EVENT_WRITE_EVENT = 0x04
+    CHANNEL_EVENT_TIMEOUT = 0x01,
+    CHANNEL_EVENT_READ = 0x02,
+    CHANNEL_EVENT_WRITE = 0x04
 };
 
-typedef void *(*channel_handle_func)(int arg);
+typedef int (*channel_handle_func)(void *args);
 
 typedef struct channel
 {
@@ -19,7 +19,7 @@ typedef struct channel
     channel_handle_func write_callback;
 } channel_t;
 
-channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args);
+channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args);
 
 int enable_channel_write_event(channel_t *channel, bool flag);
 

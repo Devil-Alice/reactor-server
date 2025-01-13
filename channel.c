@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 
-channel_t *channel_init(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args)
+channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args)
 {
     channel_t *channel = (channel_t *)malloc(sizeof(channel_t));
     channel->fd = fd;
@@ -18,13 +18,13 @@ channel_t *channel_init(int fd, int events, channel_handle_func rcallback, chann
 int enable_channel_write_event(channel_t *channel, bool flag)
 {
     if (flag == true)
-        channel->events |= FD_EVENT_WRITE_EVENT;
+        channel->events |= CHANNEL_EVENT_WRITE;
     else 
-        channel->events &= ~FD_EVENT_WRITE_EVENT;
+        channel->events &= ~CHANNEL_EVENT_WRITE;
     return 0;
 }
 
 bool is_enable_channel_write_event(channel_t *channel)
 {
-    return channel->events & FD_EVENT_WRITE_EVENT;
+    return channel->events & CHANNEL_EVENT_WRITE;
 }

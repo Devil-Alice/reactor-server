@@ -50,7 +50,7 @@ int dynamic_buffer_available_read_size(dynamic_buffer_t *dynamic_buffer)
     return dynamic_buffer->write_pos - dynamic_buffer->read_pos;
 }
 
-int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, char *buf)
+int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, const char *buf)
 {
     if (buf == NULL || dynamic_buffer == NULL)
     {
@@ -74,7 +74,7 @@ int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, char *buf)
     return 0;
 }
 
-int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, const int size)
+int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size)
 {
     if (dynamic_buffer == NULL)
     {
@@ -83,8 +83,11 @@ int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, const int size)
     }
 
     // 检查
-    if (dynamic_buffer_available_write_size(dynamic_buffer) >= size)
+    if (dynamic_buffer_available_write_size(dynamic_buffer) >= str_size)
         return 0;
+
+    // 重新计算所需要的大小，正确的大小应该为str_size - 当前可以写入的大小
+    int expand_size = str_size - dynamic_buffer_available_write_size(dynamic_buffer);
 
     int old_avilable_read_size = dynamic_buffer_available_read_size(dynamic_buffer);
     // 有已读的空间
@@ -100,16 +103,16 @@ int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, const int size)
     }
 
     // 整理空间后，扩容
-    char *new_data = (char *)realloc(dynamic_buffer->data, dynamic_buffer->capacity + size);
+    char *new_data = (char *)realloc(dynamic_buffer->data, dynamic_buffer->capacity + expand_size);
     if (new_data == NULL)
     {
         perror("dynamic_buffer_expand");
         return -1;
     }
     // 扩容成功的话，在对扩容的部分初始化
-    memset(new_data + dynamic_buffer->capacity, 0, size);
+    memset(new_data + dynamic_buffer->capacity, 0, expand_size);
     dynamic_buffer->data = new_data;
-    dynamic_buffer->capacity += size;
+    dynamic_buffer->capacity += expand_size;
 
     return 0;
 }

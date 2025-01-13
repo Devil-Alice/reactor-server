@@ -80,11 +80,11 @@ static int epoll_dispatcher_dispatch(event_loop_t *event_loop, int timeout_ms)
 
         // 触发了读事件
         if (events & EPOLLIN)
-            event_loop_process_event(event_loop, fd, FD_EVENT_READ_EVENT);
+            event_loop_process_event(event_loop, fd, CHANNEL_EVENT_READ);
 
         // 触发了写事件
         if (events & EPOLLOUT)
-            event_loop_process_event(event_loop, fd, FD_EVENT_WRITE_EVENT);
+            event_loop_process_event(event_loop, fd, CHANNEL_EVENT_WRITE);
     }
     return 0;
 }
@@ -111,9 +111,9 @@ int epoll_dispatcher_ctl(event_loop_t *event_loop, channel_t *channel, int opera
     struct epoll_event epevent;
     epevent.data.fd = channel->fd;
 
-    if (channel->events & FD_EVENT_WRITE_EVENT)
+    if (channel->events & CHANNEL_EVENT_WRITE)
         epevent.events |= EPOLLOUT;
-    if (channel->events & FD_EVENT_READ_EVENT)
+    if (channel->events & CHANNEL_EVENT_READ)
         epevent.events |= EPOLLIN;
 
     int ret = epoll_ctl(epdata->epoll_fd, operation, channel->fd, &epevent);

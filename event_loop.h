@@ -13,6 +13,9 @@ typedef struct channel_task
     int task_type;
 } channel_task_t;
 
+/**
+ * @brief event_loop结构体是用于管理文件描述符事件的结构
+ */
 typedef struct event_loop
 {
     //是否结束的标志位
