@@ -424,7 +424,7 @@ int recv_request(int epoll_fd, int client_fd)
     while ((len = recv(client_fd, buf, (sizeof buf) - 1, 0)) > 0)
     {
         // 将每一段字符串都放入链表中
-        // todo: 优化存储，这里是存的buf的地址，后续可能会被覆盖
+        // todo: 这里有个错误！！！！！！！！这里是存的buf的地址，所以链表中都是同一个buf，并没有真正存储所有的buf，需要malloc申请空间存放buf，再存入申请的地址以修正
         linked_list_push_tail(llist, buf);
     }
 
@@ -433,7 +433,8 @@ int recv_request(int epoll_fd, int client_fd)
     {
         // 解析请求内容
         handle_request(client_fd, llist);
-        linked_list_destroy(llist);
+        //这里的链表中存储的都是
+        linked_list_destroy(llist, NULL);
     }
     else if (len == 0)
     {

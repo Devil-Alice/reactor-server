@@ -11,10 +11,10 @@ linked_list_t *linked_list_create()
     return list;
 }
 
-void linked_list_destroy(linked_list_t *list)
+void linked_list_clear(linked_list_t *list, void (*callback_destroy_node)(void *))
 {
     if (list == NULL)
-        return 0;
+        return;
 
     linked_list_node_t *n = list->head;
     linked_list_node_t *tmpn;
@@ -23,14 +23,26 @@ void linked_list_destroy(linked_list_t *list)
     {
         tmpn = n;
         n = n->next;
-        //todo：在这里可以执行传入的销毁回调函数
-        //例如：destroy(tmpn->data)
+        // 在这里执行传入的销毁回调函数
+        if (callback_destroy_node != NULL)
+            callback_destroy_node(tmpn->data);
         free(tmpn);
     }
 
     list->size = 0;
     list->head = NULL;
     list->tail = NULL;
+    return;
+}
+
+void linked_list_destroy(linked_list_t *list, void (*callback_destroy_node)(void *))
+{
+    if (list == NULL)
+        return;
+
+    linked_list_clear(list, callback_destroy_node);
+
+    free(list);
 
     return;
 }
