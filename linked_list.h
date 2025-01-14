@@ -14,7 +14,7 @@ typedef struct linked_list
     linked_list_node_t *tail;
 } linked_list_t;
 
-linked_list_t linked_list_create();
+linked_list_t *linked_list_create();
 
 void linked_list_destroy(linked_list_t *list);
 

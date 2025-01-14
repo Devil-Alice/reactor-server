@@ -24,7 +24,7 @@ typedef struct event_loop
     void *dispatcher_data;
 
     //任务队列，存放channel_task
-    linked_list_t task_queue;
+    linked_list_t *task_queue;
 
     //chaannelmap树文件描述符和对应的毁掉函数的映射
     channel_map_t *channel_map;

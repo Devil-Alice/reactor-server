@@ -416,7 +416,7 @@ int recv_request(int epoll_fd, int client_fd)
 {
     printf("\tclient fd %d request\n", client_fd);
 
-    linked_list_t llist = linked_list_create();
+    linked_list_t *llist = linked_list_create();
 
     char buf[1024] = {0};
     int len;
@@ -425,15 +425,15 @@ int recv_request(int epoll_fd, int client_fd)
     {
         // 将每一段字符串都放入链表中
         // todo: 优化存储，这里是存的buf的地址，后续可能会被覆盖
-        linked_list_push_tail(&llist, buf);
+        linked_list_push_tail(llist, buf);
     }
 
     // 在非阻塞模式下读取，如果没有数据可以读（也就是读取完毕），则会返回EAGAIN错误码
     if (len == -1 && errno == EAGAIN)
     {
         // 解析请求内容
-        handle_request(client_fd, &llist);
-        linked_list_destroy(&llist);
+        handle_request(client_fd, llist);
+        linked_list_destroy(llist);
     }
     else if (len == 0)
     {

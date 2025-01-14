@@ -75,7 +75,7 @@ int event_loop_add_task(event_loop_t *event_loop, channel_t *channel, int task_t
     channel_task_t *channel_task = malloc(sizeof(channel_task_t));
     channel_task->channel = channel;
     channel_task->task_type = task_type;
-    linked_list_push_tail(&(event_loop->task_queue), channel_task);
+    linked_list_push_tail(event_loop->task_queue, channel_task);
     pthread_mutex_unlock(&(event_loop->mutex));
 
     /*
@@ -145,7 +145,7 @@ int event_loop_manage_tasks(event_loop_t *event_loop)
 
     while (1)
     {
-        channel_task_t *channel_task = (channel_task_t *)linked_list_pop_head(&(event_loop->task_queue));
+        channel_task_t *channel_task = (channel_task_t *)linked_list_pop_head(event_loop->task_queue);
         if (channel_task == NULL)
             break;
 

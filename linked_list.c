@@ -2,17 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-linked_list_t linked_list_create()
+linked_list_t *linked_list_create()
 {
-    linked_list_t list = {
-        .size = 0,
-        .head = NULL,
-        .tail = NULL};
+    linked_list_t *list = (linked_list_t *)malloc(sizeof(linked_list_t));
+    list->size = 0;
+    list->head = NULL;
+    list->tail = NULL;
     return list;
 }
 
 void linked_list_destroy(linked_list_t *list)
 {
+    if (list == NULL)
+        return 0;
+
     linked_list_node_t *n = list->head;
     linked_list_node_t *tmpn;
 
@@ -20,6 +23,8 @@ void linked_list_destroy(linked_list_t *list)
     {
         tmpn = n;
         n = n->next;
+        //todo：在这里可以执行传入的销毁回调函数
+        //例如：destroy(tmpn->data)
         free(tmpn);
     }
 
