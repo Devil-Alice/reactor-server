@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "dynamic_buffer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,4 +116,35 @@ int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size)
     dynamic_buffer->capacity += expand_size;
 
     return 0;
+}
+
+char *dynamic_buffer_availabel_read_data(dynamic_buffer_t *dynamic_buffer)
+{
+    if (dynamic_buffer == NULL)
+        return NULL;
+    return dynamic_buffer->data + dynamic_buffer->read_pos;
+}
+
+char *dynamic_buffer_availabel_write_data(dynamic_buffer_t *dynamic_buffer)
+{
+    if (dynamic_buffer == NULL)
+        return NULL;
+    return dynamic_buffer->data + dynamic_buffer->write_pos;
+}
+
+char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
+{
+    //todo: 添加错误检查，例如：如果读取到了结尾、未找到字符串等
+
+    // 使用menmen来获取要查找的数据在内存中的位置
+    // 或者使用strstr也可以，不过strstr必须保证结尾是\0
+    char *data_start = dynamic_buffer_availabel_read_data(dynamic_buffer);
+    char *pos = memmem(data_start, dynamic_buffer_available_read_size(dynamic_buffer),
+                       str, strlen(str));
+
+    // 更新read_pos，相当于舍弃了data_start一直到str的这部分字符串
+    if (pos != NULL)
+        dynamic_buffer->read_pos += pos - data_start + strlen(str);
+
+    return pos;
 }

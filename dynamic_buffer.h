@@ -28,7 +28,14 @@ int dynamic_buffer_available_read_size(dynamic_buffer_t *dynamic_buffer);
  * 2. 剩余空间不够，整理之后，再扩容
  */
 int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, const char *buf);
-/**
- * @param size 扩容的大小
- */
+/// @param size 新的字符串的大小
 int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size);
+/// @brief 获取可用的读空间，也就是返回当前读位置的指针
+char *dynamic_buffer_availabel_read_data(dynamic_buffer_t *dynamic_buffer);
+/// @brief 获取可用的写空间，也就是返回当前写位置的指针
+char *dynamic_buffer_availabel_write_data(dynamic_buffer_t *dynamic_buffer);
+/// @brief 查找字符串str在dynamic_buffer.data中第一次出现的位置
+/// @return 返回该位置的地址
+/// @note 该函数会在最后更新read_pos为 read_pos+查找到的字符串位置+条件字符串的长度
+/// @note 这么做是因为该函数返回一个可读的字符串，视为读操作，读过的字符串自然要从缓冲区中取出，方便后续的读操作
+char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str);

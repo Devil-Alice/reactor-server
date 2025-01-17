@@ -46,13 +46,13 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
             return -1;
         }
 
+        // 这里传入的buf虽然时栈数据，但是函数内部会将其通过memcpy复制到堆内存中
         dynamic_buffer_append(TCP_connection->read_buf, buf);
         total_len += len;
     }
 
     // 接收到了数据后，就需要对接收到的数据进行处理
     // 处理函数,解析http请求的内容
-    
 
     return total_len;
 }
