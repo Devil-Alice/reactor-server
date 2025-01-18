@@ -42,13 +42,13 @@ HTTP_request_t *HTTP_request_create();
 int HTTP_request_destroy(HTTP_request_t *HTTP_request);
 int HTTP_request_add_header(HTTP_request_t *HTTP_request, char *key, char *value);
 char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key);
-bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer);
+bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
 /// @brief 解析一行请求头
 /// @param HTTP_request http请求对象
-/// @param dynamic_buffer 动态buffer
+/// @param read_buffer 动态buffer
 /// @return 返回值：1-正常，0-解析到了请求行的末尾空行，-1-解析错误
-int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer);
-bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer);
+int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
+bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
 int HTTP_request_process_request(HTTP_request_t *HTTP_request);
 
 /// @brief 在str_start到str_end的主字符串中，查找第一个以split_str分割的第一个子字符串（也就是str_start到split_str的子字符串）

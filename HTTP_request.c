@@ -78,12 +78,12 @@ char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key)
     return NULL;
 }
 
-bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer)
+bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
 {
     // 取出buffer中的第一行，此时取出的第一行不包括结尾的\r\n
-    char *line_start = dynamic_buffer_availabel_read_data(dynamic_buffer);
+    char *line_start = dynamic_buffer_availabel_read_data(read_buffer);
     // 查找第一次\r\n也就是第一行的结尾在哪里
-    char *line_end = dynamic_buffer_find_pos(dynamic_buffer, "\r\n");
+    char *line_end = dynamic_buffer_find_pos(read_buffer, "\r\n");
     // 计算第一行的长度
 
     if (line_start == NULL || line_end == NULL)
@@ -112,11 +112,11 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffe
     return true;
 }
 
-int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer)
+int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
 {
     // 取出一行
-    char *line_start = dynamic_buffer_availabel_read_data(dynamic_buffer);
-    char *line_end = dynamic_buffer_find_pos(dynamic_buffer, "\r\n");
+    char *line_start = dynamic_buffer_availabel_read_data(read_buffer);
+    char *line_end = dynamic_buffer_find_pos(read_buffer, "\r\n");
 
     if (line_end == NULL)
         return -1;
@@ -151,12 +151,12 @@ int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffe
     return 1;
 }
 
-bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer)
+bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
 {
     // todo: 失败时销毁request
 
     // 解析请求行
-    int flag = HTTP_request_parse_request_line(HTTP_request, dynamic_buffer);
+    int flag = HTTP_request_parse_request_line(HTTP_request, read_buffer);
     if (flag == false)
         return false;
 
@@ -164,7 +164,7 @@ bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *d
     int ret = 0;
     while (1)
     {
-        ret = HTTP_request_parse_reqest_header(HTTP_request, dynamic_buffer);
+        ret = HTTP_request_parse_reqest_header(HTTP_request, read_buffer);
         if (ret == -1)
             return false;
         else if (ret == 0)
