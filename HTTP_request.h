@@ -4,11 +4,11 @@
 #include "dynamic_buffer.h"
 
 /// @brief 描述http请求头的结构体
-typedef struct HTTP_header
+typedef struct HTTP_request_header
 {
     char *key;
     char *value;
-} HTTP_header_t;
+} HTTP_request_header_t;
 
 /// @brief 描述http请求的结构体
 /// @note 一个http请求如下
@@ -28,18 +28,18 @@ typedef struct HTTP_request
     char *method;
     char *url;
     char *HTTP_version;
-    /// @brief 请求行的链表，该链表存储HTTP_header
+    /// @brief 请求行的链表，该链表存储HTTP_request_header
     linked_list_t *HTTP_headers;
 } HTTP_request_t;
 
-HTTP_header_t *HTTP_header_create(char *key, char *value);
-void HTTP_header_destroy(HTTP_header_t *HTTP_header);
+HTTP_request_header_t *HTTP_request_header_create(char *key, char *value);
+void HTTP_request_header_destroy(HTTP_request_header_t *HTTP_request_header);
 
 /**
  * @brief 创建并返回一个HTTP_request_t对象
  */
 HTTP_request_t *HTTP_request_create();
-int HTTP_request_clear(HTTP_request_t *HTTP_request);
+int HTTP_request_destroy(HTTP_request_t *HTTP_request);
 int HTTP_request_add_header(HTTP_request_t *HTTP_request, char *key, char *value);
 char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key);
 bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *dynamic_buffer);

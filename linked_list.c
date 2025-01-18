@@ -11,7 +11,7 @@ linked_list_t *linked_list_create()
     return list;
 }
 
-void linked_list_clear(linked_list_t *list, void (*callback_destroy_node)(void *))
+void linked_list_clear(linked_list_t *list, void (*callback_destroy_node_data)(void *))
 {
     if (list == NULL)
         return;
@@ -24,8 +24,8 @@ void linked_list_clear(linked_list_t *list, void (*callback_destroy_node)(void *
         tmpn = n;
         n = n->next;
         // 在这里执行传入的销毁回调函数
-        if (callback_destroy_node != NULL)
-            callback_destroy_node(tmpn->data);
+        if (callback_destroy_node_data != NULL)
+            callback_destroy_node_data(tmpn->data);
         free(tmpn);
     }
 
@@ -35,12 +35,12 @@ void linked_list_clear(linked_list_t *list, void (*callback_destroy_node)(void *
     return;
 }
 
-void linked_list_destroy(linked_list_t *list, void (*callback_destroy_node)(void *))
+void linked_list_destroy(linked_list_t *list, void (*callback_destroy_node_data)(void *))
 {
     if (list == NULL)
         return;
 
-    linked_list_clear(list, callback_destroy_node);
+    linked_list_clear(list, callback_destroy_node_data);
 
     free(list);
 

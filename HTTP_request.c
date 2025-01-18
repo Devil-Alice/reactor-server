@@ -4,24 +4,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-HTTP_header_t *HTTP_header_create(char *key, char *value)
+HTTP_request_header_t *HTTP_request_header_create(char *key, char *value)
 {
-    HTTP_header_t *HTTP_header = (HTTP_header_t *)malloc(sizeof(HTTP_header_t));
-    HTTP_header->key = key;
-    HTTP_header->value = value;
-    return HTTP_header;
+    HTTP_request_header_t *HTTP_request_header = (HTTP_request_header_t *)malloc(sizeof(HTTP_request_header_t));
+    HTTP_request_header->key = key;
+    HTTP_request_header->value = value;
+    return HTTP_request_header;
 }
 
-void HTTP_header_destroy(HTTP_header_t *HTTP_header)
+void HTTP_request_header_destroy(HTTP_request_header_t *HTTP_request_header)
 {
-    if (HTTP_header == NULL)
+    if (HTTP_request_header == NULL)
         return;
 
-    if (HTTP_header->key != NULL)
-        free(HTTP_header->key);
-    if (HTTP_header->value != NULL)
-        free(HTTP_header->value);
-    free(HTTP_header);
+    if (HTTP_request_header->key != NULL)
+        free(HTTP_request_header->key);
+    if (HTTP_request_header->value != NULL)
+        free(HTTP_request_header->value);
+    free(HTTP_request_header);
     return;
 }
 
@@ -32,10 +32,10 @@ HTTP_request_t *HTTP_request_create()
     HTTP_request->url = NULL;
     HTTP_request->HTTP_version = NULL;
     HTTP_request->HTTP_headers = linked_list_create();
-    return NULL;
+    return HTTP_request;
 }
 
-int HTTP_request_clear(HTTP_request_t *HTTP_request)
+int HTTP_request_destroy(HTTP_request_t *HTTP_request)
 {
     if (HTTP_request->method != NULL)
         free(HTTP_request->method);
@@ -49,15 +49,17 @@ int HTTP_request_clear(HTTP_request_t *HTTP_request)
         free(HTTP_request->HTTP_version);
     HTTP_request->HTTP_version = NULL;
 
-    linked_list_destroy(HTTP_request->HTTP_headers, HTTP_header_destroy);
+    linked_list_destroy(HTTP_request->HTTP_headers, HTTP_request_header_destroy);
+
+    free(HTTP_request);
 
     return 0;
 }
 
 int HTTP_request_add_header(HTTP_request_t *HTTP_request, char *key, char *value)
 {
-    HTTP_header_t *HTTP_header = HTTP_header_create(key, value);
-    linked_list_push_tail(HTTP_request->HTTP_headers, HTTP_header);
+    HTTP_request_header_t *HTTP_request_header = HTTP_request_header_create(key, value);
+    linked_list_push_tail(HTTP_request->HTTP_headers, HTTP_request_header);
     return 0;
 }
 
@@ -67,7 +69,7 @@ char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key)
 
     while (node != NULL)
     {
-        HTTP_header_t *header = (HTTP_header_t *)(node->data);
+        HTTP_request_header_t *header = (HTTP_request_header_t *)(node->data);
         if (strcasecmp(key, header->key) == 0)
             return header->value;
         node = node->next;
@@ -143,7 +145,8 @@ int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffe
     memcpy(value, colon_pos + 1, value_len);
     value[value_len] = '\0';
 
-    linked_list_push_tail(HTTP_request->HTTP_headers, HTTP_header_create(key, value));
+    // 将解析出的key、value添加进链表中
+    HTTP_request_add_header(HTTP_request, key, value);
 
     return 1;
 }
@@ -180,8 +183,7 @@ int HTTP_request_process_request(HTTP_request_t *HTTP_request)
     if (strcmp(HTTP_request->url, "/"))
     {
         // url为/发送主页index.html
-        
-    }
+        }
     return 0;
 }
 
