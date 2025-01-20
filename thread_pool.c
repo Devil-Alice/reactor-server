@@ -50,7 +50,8 @@ event_loop_t *thread_pool_get_next_event_loop(thread_pool_t *thread_pool)
         return NULL;
     }
 
-    event_loop_t *event_loop = NULL;
+    // 如果线程池没有子线程时，应该由主线程的event_loop来处理事件，也就是单反应堆模式
+    event_loop_t *event_loop = thread_pool->main_event_loop;
     if (thread_pool->capacity > 0)
     {
         event_loop = thread_pool->sub_threads[thread_pool->poll_index].event_loop;
