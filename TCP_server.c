@@ -58,7 +58,7 @@ listener_t *listener_create(unsigned short port)
     return listener;
 }
 
-int threadfunc_TCP_server_accept(void *arg_TCP_server)
+int callback_TCP_server_accept(void *arg_TCP_server)
 {
 
     TCP_server_t *TCP_server = (TCP_server_t *)arg_TCP_server;
@@ -67,7 +67,7 @@ int threadfunc_TCP_server_accept(void *arg_TCP_server)
     int client_fd = accept(listen_fd, NULL, NULL);
     if (client_fd == -1)
     {
-        perror("threadfunc_TCP_server_accept");
+        perror("callback_TCP_server_accept");
         return -1;
     }
 
@@ -83,7 +83,7 @@ int TCP_server_run(TCP_server_t *TCP_server)
     event_loop_run(TCP_server->thread_pool->main_event_loop);
 
     // 构建channel，添加任务，让eventloop检测读事件
-    channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, threadfunc_TCP_server_accept, NULL, TCP_server);
+    channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, TCP_server);
 
     event_loop_add_task(TCP_server->thread_pool->main_event_loop, channel, CHANNEL_TASK_TYPE_ADD);
 
