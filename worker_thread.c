@@ -23,7 +23,7 @@ int worker_thread_init(worker_thread_t *worker_thread, int num)
 //     return worker_thread;
 // }
 
-void *worker_thread_event_loop_run(void *args)
+void *threadfunc_event_loop_run(void *args)
 {
     worker_thread_t *worker_thread = (worker_thread_t *)args;
     pthread_mutex_lock(&worker_thread->mutex);
@@ -32,7 +32,7 @@ void *worker_thread_event_loop_run(void *args)
     pthread_cond_signal(&worker_thread->cond);
     if (worker_thread->event_loop == -1)
     {
-        perror("worker_thread_event_loop_run");
+        perror("threadfunc_event_loop_run");
         return -1;
     }
 
@@ -46,7 +46,7 @@ int worker_thread_run(worker_thread_t *worker_thread)
     // 注意：这里创建好子线程后，并不一定会立刻执行
     // 也就意味着线程函数中对于eventloop的初始化还未完成，此时如果访问eventloop就会报错
     // 所以，需要使用条件变量cond来确保eventloop正确初始化完成
-    pthread_create(&worker_thread->id, NULL, event_loop_run, worker_thread);
+    pthread_create(&worker_thread->id, NULL, threadfunc_event_loop_run, worker_thread);
 
     // 在这里等待eventloop初始化完毕
     pthread_mutex_lock(&worker_thread->mutex);

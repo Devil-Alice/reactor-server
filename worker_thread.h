@@ -26,5 +26,5 @@ int worker_thread_init(worker_thread_t *worker_thread, int num);
  * @brief 被线程执行的函数
  * @param args worker_thread_t的指针
  */
-void *worker_thread_event_loop_run(void *args);
+void *threadfunc_event_loop_run(void *args);
 int worker_thread_run(worker_thread_t *worker_thread);
