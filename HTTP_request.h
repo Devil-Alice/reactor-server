@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "linked_list.h"
 #include "dynamic_buffer.h"
+#include "HTTP_response.h"
 
 /// @brief 描述http请求头的结构体
 typedef struct HTTP_request_header
@@ -48,8 +49,14 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffe
 /// @param read_buffer 动态buffer
 /// @return 返回值：1-正常，0-解析到了请求行的末尾空行，-1-解析错误
 int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
+/// @brief 解析HTTP请求，并将结果存储在HTTP_request中
+/// @return 是否解析成功
 bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
-int HTTP_request_process_request(HTTP_request_t *HTTP_request);
+/// @brief 处理请求的函数，根据传入的HTTP_request组织响应数据，最后返回
+/// @param HTTP_request 需要处理的请求
+/// @param HTTP_response 返回数据：处理好的响应数据，注意时堆内存中的，用完需要释放
+/// @return 是否成功处理
+bool *HTTP_request_process_request(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response);
 
 /// @brief 在str_start到str_end的主字符串中，查找第一个以split_str分割的第一个子字符串（也就是str_start到split_str的子字符串）
 /// @param set_str 传出参数，set_str是需要设置的字符串地址，注意这里为二级指针

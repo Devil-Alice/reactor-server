@@ -15,16 +15,16 @@ channel_t *channel_create(int fd, int events, channel_handle_func rcallback, cha
     return NULL;
 }
 
-int enable_channel_write_event(channel_t *channel, bool flag)
+void channel_enable_write_event(channel_t *channel, bool flag)
 {
     if (flag == true)
         channel->events |= CHANNEL_EVENT_WRITE;
-    else 
+    else
         channel->events &= ~CHANNEL_EVENT_WRITE;
-    return 0;
+    return;
 }
 
-bool is_enable_channel_write_event(channel_t *channel)
+bool channel_get_write_event_status(channel_t *channel)
 {
     return channel->events & CHANNEL_EVENT_WRITE;
 }

@@ -20,7 +20,12 @@ typedef struct channel
 } channel_t;
 
 channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args);
-
-int enable_channel_write_event(channel_t *channel, bool flag);
-
-bool is_enable_channel_write_event(channel_t *channel);
+/// @brief 设置channel的写事件状态
+/// @param channel
+/// @param flag true为开启，false为关闭
+/// @return
+void channel_enable_write_event(channel_t *channel, bool flag);
+/// @brief 获取channel的写事件转改
+/// @param channel
+/// @return true为开启，false为关闭
+bool channel_get_write_event_status(channel_t *channel);
