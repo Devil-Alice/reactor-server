@@ -59,8 +59,8 @@ enum HTTP_STATUS
 
 typedef struct HTTP_response_header
 {
-    char *key[64];
-    char *value[64];
+    char key[64];
+    char value[64];
 } HTTP_response_header_t;
 
 /// @brief http响应结构体
@@ -83,7 +83,7 @@ typedef struct HTTP_response
     // 状态行: 版本 状态码 状态码描述
     char HTTP_version[16];
     enum HTTP_STATUS status;
-    char *status_description[128];
+    char status_description[128];
 
     // 响应头，使用链表来存储，内部存放HTTP_response_header*
     linked_list_t *HTTP_response_headers;

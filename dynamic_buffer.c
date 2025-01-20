@@ -13,7 +13,7 @@ dynamic_buffer_t *dynamic_buffer_create(int capasicy)
     if (dynamic_buffer == NULL)
     {
         perror("dynamic_buffer_create");
-        return -1;
+        return NULL;
     }
 
     dynamic_buffer->data = (char *)malloc(sizeof(char) * capasicy);
