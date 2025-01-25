@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "server.h"
+#include "TCP_server.h"
 
 // gcc *.c -o ./build/main -lpthread -std=gnu11
 int main(int argc, char **argv)
@@ -13,23 +13,18 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    printf("single reactor server!\n");
+    printf("multi reactor server!\n");
+    // 解析传入参数
+    int port = atoi(argv[1]);
+    char *rcs_path = argv[2];
 
     // 切换程序目录到指定的资源目录
-    char *rcs_path = argv[2];
     printf("work directory: %s\n", rcs_path);
     chdir(rcs_path);
 
-    // 初始化监听fd
-    int listen_fd = init_listen_fd(atoi(argv[1]));
-    if (listen_fd == -1)
-    {
-        perror("init_listen_fd failed");
-        return -1;
-    }
-
-    // 启动服务器程序
-    run_epoll(listen_fd);
+    // 启动多反应堆模型
+    TCP_server_t *TCP_server = TCP_server_create(port, 10);
+    TCP_server_run(TCP_server);
 
     return 0;
 }
