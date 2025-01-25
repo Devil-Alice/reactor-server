@@ -42,8 +42,8 @@ event_loop_t *event_loop_create(char *thread_name)
         return NULL;
     }
 
-    // 创建了socket_pair后，将需要对这个fd进行监听，所以我们需要构造一个channel
-    channel_t *channel = channel_create(event_loop->socket_pair[1], CHANNEL_EVENT_READ, event_loop_socket_pair_read, NULL, event_loop);
+    // 创建了socket_pair后，将需要对这个fd进行监听，所以我们需要构造一个channel，这里不需要传入销毁的回调，因为sockpair需要一直存在用于唤醒，直到服务器关闭
+    channel_t *channel = channel_create(event_loop->socket_pair[1], CHANNEL_EVENT_READ, event_loop_socket_pair_read, NULL, NULL, event_loop);
 
     // 将这个channel添加到任务队列中，才能监听
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);

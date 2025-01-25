@@ -4,15 +4,30 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 
-channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args)
+channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, channel_handle_func dcallback, void *args)
 {
     channel_t *channel = (channel_t *)malloc(sizeof(channel_t));
     channel->fd = fd;
     channel->events = events;
     channel->read_callback = rcallback;
     channel->write_callback = wcallback;
+    channel->destroy_callback = dcallback;
     channel->args = args;
     return NULL;
+}
+
+void channel_destroy(channel_t *channel)
+{
+    if (channel == NULL)
+        return;
+
+    if (channel->args != NULL)
+        free(channel->args);
+
+    free(channel);
+    channel == NULL;
+
+    return;
 }
 
 void channel_enable_write_event(channel_t *channel, bool flag)

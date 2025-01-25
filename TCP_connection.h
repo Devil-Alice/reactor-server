@@ -19,3 +19,5 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection);
 int callback_TCP_connection_read(void *arg_TCP_connection);
 // 处理连接响应发送的函数
 int callback_TCP_connection_write(void *arg_TCP_connection);
+// 处理连接相关资源的释放
+int callback_TCP_connection_destroy(void *arg_TCP_connection);

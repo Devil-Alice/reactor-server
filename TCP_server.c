@@ -82,13 +82,13 @@ int TCP_server_run(TCP_server_t *TCP_server)
     // 先单独启用主线程的eventloop
     event_loop_run(TCP_server->thread_pool->main_event_loop);
 
-    // 构建channel，添加任务，让eventloop检测读事件
-    channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, TCP_server);
+    // 构建channel，添加任务，让eventloop检测读事件，因为是读取客户端的连接，所以只需要传入读回调，服务器关闭时会自动销毁
+    channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, NULL, TCP_server);
 
     event_loop_add_task(TCP_server->thread_pool->main_event_loop, channel, CHANNEL_TASK_TYPE_ADD);
 
     // 启动所有子线程的eventloop
     thread_pool_run(TCP_server->thread_pool);
-    
+
     return 0;
 }

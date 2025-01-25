@@ -15,7 +15,7 @@ TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
     TCP_connection->read_buf = dynamic_buffer_create(1024);
     TCP_connection->read_buf = dynamic_buffer_create(1024);
     // 创建一个channel，用于处理http请求以及回复http响应，这里将事件设置为读写事件
-    channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ & CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, TCP_connection);
+    channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ & CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy,TCP_connection);
     TCP_connection->channel = channel;
 
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
@@ -27,7 +27,8 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection)
     if (TCP_connection == NULL)
         return;
 
-    channel_destroy(TCP_connection->channel);
+    if (TCP_connection->channel != NULL)
+        channel_destroy(TCP_connection->channel);
 
     if (TCP_connection->read_buf != NULL)
         dynamic_buffer_destroy(TCP_connection->read_buf);
@@ -130,5 +131,20 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
 
     // 处理完成，客户端断开连接的操作应该在epollwait处检测
     // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
+    return 0;
+}
+
+int callback_TCP_connection_destroy(void *arg_TCP_connection)
+{
+    TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
+
+    // 新建一个eventloop的任务，将channel从epoll树中删除
+    event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
+    // 释放channel_map中的
+    channel_map_remove(TCP_connection->event_loop->channel_map, TCP_connection->channel->fd);
+    // 释放channel，该操作在TCP_connection_destroy存在
+    //  channel_destroy(TCP_connection->channel);
+    // 释放tcp_connection
+    TCP_connection_destroy(TCP_connection);
     return 0;
 }

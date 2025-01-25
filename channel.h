@@ -17,9 +17,11 @@ typedef struct channel
     void *args;
     channel_handle_func read_callback;
     channel_handle_func write_callback;
+    channel_handle_func destroy_callback;
 } channel_t;
 
-channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, void *args);
+channel_t *channel_create(int fd, int events, channel_handle_func rcallback, channel_handle_func wcallback, channel_handle_func dcallback, void *args);
+void channel_destroy(channel_t *channel);
 /// @brief 设置channel的写事件状态
 /// @param channel
 /// @param flag true为开启，false为关闭
