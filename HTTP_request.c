@@ -49,7 +49,7 @@ int HTTP_request_destroy(HTTP_request_t *HTTP_request)
         free(HTTP_request->HTTP_version);
     HTTP_request->HTTP_version = NULL;
 
-    linked_list_destroy(HTTP_request->HTTP_headers, HTTP_request_header_destroy);
+    linked_list_destroy(HTTP_request->HTTP_headers, (void *)HTTP_request_header_destroy);
 
     free(HTTP_request);
 
@@ -178,7 +178,7 @@ bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *r
     return true;
 }
 
-bool *HTTP_request_process_request(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
+bool HTTP_request_process_request(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
 {
     // todo: 完成处理的内容
 

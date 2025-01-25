@@ -6,19 +6,19 @@
 channel_map_t *channel_map_create(int capacity)
 {
     channel_map_t *channel_map = malloc(sizeof(channel_map_t));
-    channel_map->list = calloc(capacity, sizeof(channel_t));
+    channel_map->list = (channel_t **)calloc(capacity, sizeof(channel_t*));
     return channel_map;
 }
 
 int channel_map_expand(channel_map_t *channel_map, int capacity)
 {
-    channel_map_t *new_map = realloc(channel_map->list, capacity * sizeof(channel_t));
-    if (new_map == NULL)
+    channel_t **new_list = (channel_t **)realloc(channel_map->list, capacity * sizeof(channel_t*));
+    if (new_list == NULL)
     {
         perror("channel_map_expand realloc");
         return -1;
     }
-    channel_map->list = new_map;
+    channel_map->list = new_list;
     channel_map->capacity = capacity;
     return 0;
 }

@@ -2,6 +2,8 @@
 #include "channel.h"
 #include "event_loop.h"
 
+typedef struct event_loop event_loop_t;
+
 typedef struct dispatcher
 {
     // 内部存放不同的函数指针

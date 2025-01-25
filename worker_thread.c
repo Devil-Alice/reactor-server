@@ -4,7 +4,7 @@
 int worker_thread_init(worker_thread_t *worker_thread, int num)
 {
     worker_thread->id = 0;
-    sprintf(worker_thread->name, "subthread-&d", num);
+    sprintf(worker_thread->name, "subthread-%d", num);
     pthread_mutex_init(&worker_thread->mutex, NULL);
     pthread_cond_init(&worker_thread->cond, NULL);
     worker_thread->event_loop = NULL;
@@ -30,15 +30,15 @@ void *threadfunc_event_loop_run(void *args)
     worker_thread->event_loop = event_loop_create(worker_thread->name);
     pthread_mutex_unlock(&worker_thread->mutex);
     pthread_cond_signal(&worker_thread->cond);
-    if (worker_thread->event_loop == -1)
+    if (worker_thread->event_loop == NULL)
     {
         perror("threadfunc_event_loop_run");
-        return -1;
+        return (void *)-1;
     }
 
-    event_loop_run(&worker_thread->event_loop);
+    event_loop_run(worker_thread->event_loop);
 
-    return 0;
+    return (void *)0;
 }
 
 int worker_thread_run(worker_thread_t *worker_thread)

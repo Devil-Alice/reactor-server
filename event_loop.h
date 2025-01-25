@@ -1,7 +1,10 @@
 #pragma once
 #include "dispatcher.h"
+#include <pthread.h>
 #include "linked_list.h"
 #include "channel_map.h"
+
+typedef struct dispatcher dispatcher_t;
 
 extern dispatcher_t epoll_dispatcher;
 

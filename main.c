@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "server.h"
 
+// gcc *.c -o ./build/main -lpthread -std=gnu11
 int main(int argc, char **argv)
 {
 

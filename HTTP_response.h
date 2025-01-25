@@ -4,6 +4,9 @@
 
 enum HTTP_STATUS
 {
+    //未定义状态
+    HTTP_STATUS_UNKNOWN = 0,
+
     // Informational 1xx
     HTTP_STATUS_CONTINUE = 100,
     HTTP_STATUS_SWITCHING_PROTOCOLS = 101,
