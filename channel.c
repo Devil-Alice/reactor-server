@@ -13,7 +13,7 @@ channel_t *channel_create(int fd, int events, channel_handle_func rcallback, cha
     channel->write_callback = wcallback;
     channel->destroy_callback = dcallback;
     channel->args = args;
-    return NULL;
+    return channel;
 }
 
 void channel_destroy(channel_t *channel)
