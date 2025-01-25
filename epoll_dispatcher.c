@@ -49,6 +49,7 @@ static void *epoll_dispatcher_init()
  */
 static int epoll_dispatcher_add(event_loop_t *event_loop, channel_t *channel)
 {
+    printf("epoll add > fd(%d), channel events(%d)\n", channel->fd, channel->events);
     return epoll_dispatcher_ctl(event_loop, channel, EPOLL_CTL_ADD);
 }
 
@@ -109,6 +110,7 @@ int epoll_dispatcher_ctl(event_loop_t *event_loop, channel_t *channel, int opera
 
     ep_data_t *epdata = (ep_data_t *)(event_loop->dispatcher_data);
     struct epoll_event epevent;
+    epevent.events = 0;
     epevent.data.fd = channel->fd;
 
     if (channel->events & CHANNEL_EVENT_WRITE)

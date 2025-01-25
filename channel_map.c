@@ -7,6 +7,7 @@ channel_map_t *channel_map_create(int capacity)
 {
     channel_map_t *channel_map = malloc(sizeof(channel_map_t));
     channel_map->list = (channel_t **)calloc(capacity, sizeof(channel_t*));
+    channel_map->capacity = capacity;
     return channel_map;
 }
 
