@@ -9,8 +9,8 @@
 #define LOG(type, fmt, ...)                                                        \
     do                                                                             \
     {                                                                              \
-        printf("%s:%d: In function \'%s\'\r\n", __FILE__, __LINE__, __FUNCTION__); \
-        printf("%s info: ", type);                                                 \
+        printf("[%s:%d]: In function \'%s\'\r\n", __FILE__, __LINE__, __FUNCTION__); \
+        printf("\t%s info: ", type);                                                 \
         printf(fmt, ##__VA_ARGS__);                                                \
         printf("\r\n");                                                            \
     } while (0);

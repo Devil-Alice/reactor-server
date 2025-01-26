@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "TCP_server.h"
+#include "log.h"
 
 // gcc *.c -o ./build/main -lpthread -std=gnu11
 int main(int argc, char **argv)

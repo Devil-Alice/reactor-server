@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "log.h"
 
 thread_pool_t *thread_pool_create(event_loop_t *main_event_loop, int capacity)
 {
@@ -17,6 +18,7 @@ thread_pool_t *thread_pool_create(event_loop_t *main_event_loop, int capacity)
 
 int thread_pool_run(thread_pool_t *thread_pool)
 {
+    LOG_DEBUG("thread pool start");
     // 检查线程池
     assert(thread_pool && !(thread_pool->is_start));
 
@@ -35,6 +37,7 @@ int thread_pool_run(thread_pool_t *thread_pool)
         worker_thread_run(&(thread_pool->sub_threads[i]));
     }
 
+    LOG_DEBUG("thread pool is running");
     return 0;
 }
 

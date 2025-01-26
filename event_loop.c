@@ -8,15 +8,19 @@
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <string.h>
+#include "log.h"
 
 event_loop_t *event_loop_create_main(void)
 {
-    return event_loop_create(NULL);
+    LOG_DEBUG("create main event loop");
+    event_loop_t *event_loop = event_loop_create(NULL);
+    LOG_DEBUG("create main event loop successfully");
+    return event_loop;
 }
 
 event_loop_t *event_loop_create(char *thread_name)
 {
-
+    LOG_DEBUG("create event loop");
     event_loop_t *event_loop = (event_loop_t *)malloc(sizeof(struct event_loop));
     event_loop->is_quit = false;
     // 将epoll的dispatcher赋值给eventloop
@@ -47,16 +51,19 @@ event_loop_t *event_loop_create(char *thread_name)
 
     // 将这个channel添加到任务队列中，才能监听
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
+
+    LOG_DEBUG("create event loop successfully");
     return event_loop;
 }
 
 int event_loop_run(event_loop_t *event_loop)
 {
+    LOG_DEBUG("event loop start");
     assert(event_loop != NULL);
     // 比较线程id是否相等，如果不等就是错误
     if (event_loop->thread_id != pthread_self())
     {
-        printf("thread_id of event loop is not equals to pthread_self()");
+        LOG_ERROR("thread_id of event loop is not equals to pthread_self()");
         return -1;
     }
     dispatcher_t *dispatcher = event_loop->dispatcher;
@@ -66,11 +73,13 @@ int event_loop_run(event_loop_t *event_loop)
         // 如果是阻塞在上一行，那么在有channel_task的时候，会被event_loop_wakeup_event唤醒，执行管理的操作
         event_loop_manage_tasks(event_loop);
     }
+    LOG_DEBUG("event loop is running");
     return 0;
 }
 
 int event_loop_add_task(event_loop_t *event_loop, channel_t *channel, int task_type)
 {
+    LOG_DEBUG("add event loop task");
     pthread_mutex_lock(&(event_loop->mutex));
     channel_task_t *channel_task = malloc(sizeof(channel_task_t));
     channel_task->channel = channel;
@@ -90,6 +99,7 @@ int event_loop_add_task(event_loop_t *event_loop, channel_t *channel, int task_t
     else
         event_loop_wakeup_event(event_loop); // 唤醒可能正在epoll阻塞的子线程
 
+    LOG_DEBUG("add event loop task successfully");
     return 0;
 }
 
@@ -136,13 +146,12 @@ int event_loop_modify_channel(event_loop_t *event_loop, channel_t *channel)
         return -1;
     }
     return event_loop->dispatcher->modify(event_loop, channel);
-    ;
 }
 
 int event_loop_manage_tasks(event_loop_t *event_loop)
 {
     pthread_mutex_lock(&(event_loop->mutex));
-
+    LOG_DEBUG("manage event loop tasks");
     while (1)
     {
         channel_task_t *channel_task = (channel_task_t *)linked_list_pop_head(event_loop->task_queue);
@@ -161,8 +170,8 @@ int event_loop_manage_tasks(event_loop_t *event_loop)
         free(channel_task);
     }
 
+    LOG_DEBUG("manage event loop tasks successfully");
     pthread_mutex_unlock(&(event_loop->mutex));
-
     return 0;
 }
 
