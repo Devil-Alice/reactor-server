@@ -28,8 +28,12 @@ int dynamic_buffer_available_read_size(dynamic_buffer_t *dynamic_buffer);
  * 2. 剩余空间不够，整理之后，再扩容
  */
 int dynamic_buffer_append_str(dynamic_buffer_t *dynamic_buffer, const char *buf);
-// todo: 添加一个函数dynamic_buffer_append_data，该函数可以接受一个字符串长度的参数，用于一些特殊场景，例如read每次按长度读取，但是结尾不一定是\0
-
+/// @brief 追加数据到dynamic_buffer中，需要指定数据长度
+/// @param dynamic_buffer 目的地
+/// @param buf 写入的数据
+/// @param buf_size 数据长度
+/// @return 
+int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf, int buf_size);
 /// @param size 新的字符串的大小
 int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size);
 /// @brief 获取可用的读空间，也就是返回当前读位置的指针

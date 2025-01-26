@@ -46,13 +46,12 @@ listener_t *listener_create(unsigned short port)
         perror("TCP_server_create bind");
         return NULL;
     }
-    //这里不用listen，因为我们通过主反应堆的epoll来监听这个fd了
-    // ret = listen(sockfd, 128);
-    // if (ret == -1)
-    // {
-    //     perror("TCP_server_create listen");
-    //     return NULL;
-    // }
+    ret = listen(sockfd, 128);
+    if (ret == -1)
+    {
+        perror("TCP_server_create listen");
+        return NULL;
+    }
 
     // 构建listener
     listener_t *listener = (listener_t *)malloc(sizeof(listener_t));
@@ -85,10 +84,6 @@ int callback_TCP_server_accept(void *arg_TCP_server)
 int TCP_server_run(TCP_server_t *TCP_server)
 {
     LOG_DEBUG("TCP server start");
-    // 先单独启用主线程的eventloop
-    LOG_DEBUG("main event loop start");
-    event_loop_run(TCP_server->thread_pool->main_event_loop);
-    LOG_DEBUG("main event loop is running");
 
     // 构建channel，添加任务，让eventloop检测读事件，因为是读取客户端的连接，所以只需要传入读回调，服务器关闭时会自动销毁
     channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, NULL, TCP_server);
@@ -97,6 +92,11 @@ int TCP_server_run(TCP_server_t *TCP_server)
 
     // 启动所有子线程的eventloop
     thread_pool_run(TCP_server->thread_pool);
+
+    // 单独启用主线程的eventloop
+    LOG_DEBUG("main event loop is running");
     LOG_DEBUG("TCP server is running");
+    event_loop_run(TCP_server->thread_pool->main_event_loop);
+    
     return 0;
 }

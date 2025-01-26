@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "log.h"
 
 dynamic_buffer_t *dynamic_buffer_create(int capasicy)
 {
@@ -53,13 +54,18 @@ int dynamic_buffer_available_read_size(dynamic_buffer_t *dynamic_buffer)
 
 int dynamic_buffer_append_str(dynamic_buffer_t *dynamic_buffer, const char *buf)
 {
+    return dynamic_buffer_append_data(dynamic_buffer, buf, strlen(buf));
+}
+
+int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf, int buf_size)
+{
     if (buf == NULL || dynamic_buffer == NULL)
     {
         perror("dynamic_buffer_append_str");
         return -1;
     }
 
-    int size = strlen(buf);
+    int size = buf_size;
     // 这里不判断长度是否足够，因为expand中会判断
     //  if (dynamic_buffer_available_write_size(dynamic_buffer) < size)
     int ret = dynamic_buffer_expand(dynamic_buffer, size);
@@ -134,7 +140,7 @@ char *dynamic_buffer_availabel_write_data(dynamic_buffer_t *dynamic_buffer)
 
 char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
 {
-    //todo: 添加错误检查，例如：如果读取到了结尾、未找到字符串等
+    // todo: 添加错误检查，例如：如果读取到了结尾、未找到字符串等
 
     // 使用menmen来获取要查找的数据在内存中的位置
     // 或者使用strstr也可以，不过strstr必须保证结尾是\0
@@ -151,6 +157,22 @@ char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
 
 int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *src_buffer)
 {
-    
+    // 没催按照64的大小追加
+    int size = 128;
+    while (1)
+    {
+        // 获取实际可读的大小
+        int available_src_size = dynamic_buffer_available_read_size(src_buffer);
+        // 最大64
+        size = available_src_size < size ? available_src_size : size;
+        int ret = dynamic_buffer_append_data(dest_buffer, src_buffer->data, size);
+        if (ret == -1)
+        {
+            LOG_ERROR("dynamic_buffer_append_from");
+            return -1;
+        }
+        src_buffer->read_pos += size;
+    }
+
     return 0;
 }

@@ -58,8 +58,8 @@ event_loop_t *event_loop_create(char *thread_name)
 
 int event_loop_run(event_loop_t *event_loop)
 {
-    LOG_DEBUG("event loop start");
     assert(event_loop != NULL);
+    LOG_DEBUG("event loop running");
     // 比较线程id是否相等，如果不等就是错误
     if (event_loop->thread_id != pthread_self())
     {
@@ -73,7 +73,6 @@ int event_loop_run(event_loop_t *event_loop)
         // 如果是阻塞在上一行，那么在有channel_task的时候，会被event_loop_wakeup_event唤醒，执行管理的操作
         event_loop_manage_tasks(event_loop);
     }
-    LOG_DEBUG("event loop is running");
     return 0;
 }
 
@@ -151,7 +150,6 @@ int event_loop_modify_channel(event_loop_t *event_loop, channel_t *channel)
 int event_loop_manage_tasks(event_loop_t *event_loop)
 {
     pthread_mutex_lock(&(event_loop->mutex));
-    LOG_DEBUG("manage event loop tasks");
     while (1)
     {
         channel_task_t *channel_task = (channel_task_t *)linked_list_pop_head(event_loop->task_queue);
@@ -170,7 +168,6 @@ int event_loop_manage_tasks(event_loop_t *event_loop)
         free(channel_task);
     }
 
-    LOG_DEBUG("manage event loop tasks successfully");
     pthread_mutex_unlock(&(event_loop->mutex));
     return 0;
 }

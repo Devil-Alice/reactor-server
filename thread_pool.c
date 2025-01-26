@@ -44,7 +44,7 @@ int thread_pool_run(thread_pool_t *thread_pool)
 event_loop_t *thread_pool_get_next_event_loop(thread_pool_t *thread_pool)
 {
     // 检查线程池
-    assert(thread_pool && !(thread_pool->is_start));
+    assert(thread_pool && thread_pool->is_start);
 
     // 必须由主线程执行，所以需要检查当前运行的是不是主线程
     if (thread_pool->main_event_loop->thread_id != pthread_self())

@@ -58,9 +58,8 @@ int HTTP_response_build(HTTP_response_t *HTTP_response, dynamic_buffer_t *write_
 
     // 构建空行
     dynamic_buffer_append_str(write_buffer, "\r\n");
-
-    // todo: 构建响应体
-    //  dynamic_buffer_append_str(write_buffer, content_body);
+    // 构建响应体
+    dynamic_buffer_append_from(write_buffer, HTTP_response->content);
 
     return 0;
 }

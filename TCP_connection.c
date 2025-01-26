@@ -5,6 +5,7 @@
 #include <string.h>
 #include "HTTP_request.h"
 #include "HTTP_response.h"
+#include "log.h"
 
 // 创建一个TCP_connection对象，创建对应的channel并添加任务
 TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
@@ -15,7 +16,7 @@ TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
     TCP_connection->read_buf = dynamic_buffer_create(1024);
     TCP_connection->read_buf = dynamic_buffer_create(1024);
     // 创建一个channel，用于处理http请求以及回复http响应，这里将事件设置为读写事件
-    channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ & CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy, TCP_connection);
+    channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ | CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy, TCP_connection);
     TCP_connection->channel = channel;
 
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
@@ -50,6 +51,8 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
     // 处理http请求的函数：
     // todo: 这里的process函数最好另外创建一个文件单独写，并且，处理各种url的函数也写在内部，通过一个链表存放url与其处理函数的关系
 
+    LOG_DEBUG("processing requet > method(%s), url(%s)", HTTP_request->method, HTTP_request->url);
+
     // 处理请求数据，完善response中的内容
     // 检查
     if (HTTP_request == NULL)
@@ -64,10 +67,12 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
         HTTP_response->status = HTTP_STATUS_OK;
         sprintf(HTTP_response->status_description, "%s", "OK");
         HTTP_response_add_header(HTTP_response, "Content-Type", "test/plain");
-        HTTP_response_add_header(HTTP_response, "Content-Length", sizeof("index.html"));
-        HTTP_response_add_header(HTTP_response, "Content-Length", "index.html");
-        // dynamic_buffer_append_str();
-        
+        char size_buf[64] = {0};
+        sprintf(size_buf, "%ld", sizeof("index.html"));
+        HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
+        // 生成响应体数据
+        dynamic_buffer_append_str(HTTP_response->content, "index.html");
+        // 构建整个响应数据，写入write_buf中
         HTTP_response_build(HTTP_response, TCP_connection->write_buf);
     }
     // 请求处理完毕

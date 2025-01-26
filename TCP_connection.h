@@ -1,6 +1,7 @@
 #pragma once
 #include "event_loop.h"
 #include "dynamic_buffer.h"
+#include "HTTP_response.h"
 
 /// @brief TCP_connection可以看作channel的父类，处理连接的请求和响应
 typedef struct TCP_connection
