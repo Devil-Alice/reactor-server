@@ -22,7 +22,7 @@ dynamic_buffer_t *dynamic_buffer_create(int capasicy)
     dynamic_buffer->capacity = capasicy;
     dynamic_buffer->read_pos = 0;
     dynamic_buffer->write_pos = 0;
-    return NULL;
+    return dynamic_buffer;
 }
 
 int dynamic_buffer_destroy(dynamic_buffer_t *dynamic_buffer)

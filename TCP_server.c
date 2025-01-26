@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include "TCP_connection.h"
+#include <fcntl.h>
 #include "log.h"
 
 TCP_server_t *TCP_server_create(unsigned short port, int threads_capacity)
@@ -69,6 +70,7 @@ int callback_TCP_server_accept(void *arg_TCP_server)
 
     int listen_fd = TCP_server->listener->fd;
     int client_fd = accept(listen_fd, NULL, NULL);
+
     if (client_fd == -1)
     {
         perror("callback_TCP_server_accept");

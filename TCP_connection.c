@@ -14,7 +14,7 @@ TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
     sprintf(TCP_connection->name, "conn-%d", fd);
     TCP_connection->event_loop = event_loop;
     TCP_connection->read_buf = dynamic_buffer_create(1024);
-    TCP_connection->read_buf = dynamic_buffer_create(1024);
+    TCP_connection->write_buf = dynamic_buffer_create(1024);
     // 创建一个channel，用于处理http请求以及回复http响应，这里将事件设置为读写事件
     channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ | CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy, TCP_connection);
     TCP_connection->channel = channel;
@@ -115,19 +115,18 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     while (1)
     {
         len = read(TCP_connection->channel->fd, buf, sizeof(buf) - 1);
-        if (len == 0)
+        if (len <= 0)
         {
-            // 断开连接
-            return 0;
-        }
-        else if (len < 0)
-        {
-            perror("callback_TCP_connection_read");
-            return -1;
+            if (len < 0)
+            {
+                perror("callback_TCP_connection_read");
+                return -1;
+            }
+            break;
         }
 
         // 这里传入的buf虽然时栈数据，但是函数内部会将其通过memcpy复制到堆内存中
-        dynamic_buffer_append_str(TCP_connection->read_buf, buf);
+        dynamic_buffer_append_data(TCP_connection->read_buf, buf, len);
         total_len += len;
     }
 
