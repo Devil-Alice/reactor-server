@@ -90,6 +90,7 @@ typedef struct HTTP_response
 
     // 响应头，使用链表来存储，内部存放HTTP_response_header*
     linked_list_t *HTTP_response_headers;
+    dynamic_buffer_t *content;
 
 } HTTP_response_t;
 

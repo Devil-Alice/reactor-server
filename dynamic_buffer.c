@@ -51,11 +51,11 @@ int dynamic_buffer_available_read_size(dynamic_buffer_t *dynamic_buffer)
     return dynamic_buffer->write_pos - dynamic_buffer->read_pos;
 }
 
-int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, const char *buf)
+int dynamic_buffer_append_str(dynamic_buffer_t *dynamic_buffer, const char *buf)
 {
     if (buf == NULL || dynamic_buffer == NULL)
     {
-        perror("dynamic_buffer_append");
+        perror("dynamic_buffer_append_str");
         return -1;
     }
 
@@ -65,7 +65,7 @@ int dynamic_buffer_append(dynamic_buffer_t *dynamic_buffer, const char *buf)
     int ret = dynamic_buffer_expand(dynamic_buffer, size);
     if (ret == -1)
     {
-        perror("dynamic_buffer_append");
+        perror("dynamic_buffer_append_str");
         return -1;
     }
 
@@ -147,4 +147,10 @@ char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
         dynamic_buffer->read_pos += pos - data_start + strlen(str);
 
     return pos;
+}
+
+int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *src_buffer)
+{
+    
+    return 0;
 }

@@ -178,23 +178,6 @@ bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *r
     return true;
 }
 
-bool HTTP_request_process_request(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
-{
-    // todo: 完成处理的内容
-
-    // 检查
-    if (HTTP_request == NULL)
-    {
-        perror("HTTP_request_process_request");
-        return false;
-    }
-
-    if (strcmp(HTTP_request->url, "/"))
-    {
-        // url为/发送主页index.html
-    }
-    return true;
-}
 
 char *set_first_splited_string_to(char **set_str, char *str_start, char *str_end, char *split_str)
 {

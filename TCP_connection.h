@@ -14,6 +14,11 @@ typedef struct TCP_connection
 
 TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop);
 void TCP_connection_destroy(TCP_connection_t *TCP_connection);
+/// @brief 处理请求的函数，根据传入的HTTP_request组织响应数据，最后返回
+/// @param TCP_connection tcp连接用
+/// @param HTTP_response 返回数据：处理好的响应数据，注意时堆内存中的，用完需要释放
+/// @return 是否成功处理
+bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_response_t *HTTP_response);
 
 // 处理处理连接请求的函数
 int callback_TCP_connection_read(void *arg_TCP_connection);

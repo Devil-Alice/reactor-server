@@ -44,7 +44,8 @@ void *threadfunc_event_loop_run(void *args)
 int worker_thread_run(worker_thread_t *worker_thread)
 {
     // 注意：这里创建好子线程后，并不一定会立刻执行
-    // 也就意味着线程函数中对于eventloop的初始化还未完成，此时如果访问eventloop就会报错
+    // worker_thread_run这个函数是主线程执行的，而eventloop时在子线程中初始化的
+    // 也就意味着线程函数中对于eventloop的初始化还未完成，此时主线程如果访问eventloop就会报错
     // 所以，需要使用条件变量cond来确保eventloop正确初始化完成
     pthread_create(&worker_thread->id, NULL, threadfunc_event_loop_run, worker_thread);
 
@@ -55,5 +56,8 @@ int worker_thread_run(worker_thread_t *worker_thread)
         pthread_cond_wait(&worker_thread->cond, &worker_thread->mutex);
     }
     pthread_mutex_unlock(&worker_thread->mutex);
+
+    //此线程其他操作这时候就可以正常访问eventloop了
+    //例如：主线程（也就是主反应堆）在接收到了一个链接请求后，会访问分配给子线程的反应堆（eventloop）
     return 0;
 }

@@ -46,12 +46,13 @@ listener_t *listener_create(unsigned short port)
         perror("TCP_server_create bind");
         return NULL;
     }
-    ret = listen(sockfd, 128);
-    if (ret == -1)
-    {
-        perror("TCP_server_create listen");
-        return NULL;
-    }
+    //这里不用listen，因为我们通过主反应堆的epoll来监听这个fd了
+    // ret = listen(sockfd, 128);
+    // if (ret == -1)
+    // {
+    //     perror("TCP_server_create listen");
+    //     return NULL;
+    // }
 
     // 构建listener
     listener_t *listener = (listener_t *)malloc(sizeof(listener_t));

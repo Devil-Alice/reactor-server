@@ -22,6 +22,7 @@ HTTP_response_t *HTTP_response_create()
     HTTP_response->status = HTTP_STATUS_UNKNOWN;
     memset(HTTP_response->status_description, 0, sizeof(HTTP_response->status_description));
     HTTP_response->HTTP_response_headers = linked_list_create();
+    HTTP_response->content = dynamic_buffer_create(1024);
 
     return HTTP_response;
 }
@@ -29,6 +30,7 @@ HTTP_response_t *HTTP_response_create()
 void HTTP_response_destroy(HTTP_response_t *HTTP_response)
 {
     linked_list_destroy(HTTP_response->HTTP_response_headers, (void *)HTTP_response_header_destroy);
+    dynamic_buffer_destroy(HTTP_response->content);
     return;
 }
 
@@ -44,21 +46,21 @@ int HTTP_response_build(HTTP_response_t *HTTP_response, dynamic_buffer_t *write_
 
     // 构建响应行
     sprintf(buf, "%s %d %s\r\n", HTTP_response->HTTP_version, HTTP_response->status, HTTP_response->status_description);
-    dynamic_buffer_append(write_buffer, buf);
+    dynamic_buffer_append_str(write_buffer, buf);
     // 构建响应头
     linked_list_node_t *node = HTTP_response->HTTP_response_headers->head;
     while (node != NULL)
     {
         HTTP_response_header_t *header = (HTTP_response_header_t *)(node->data);
         sprintf(buf, "%s: %s\r\n", header->key, header->value);
-        dynamic_buffer_append(write_buffer, buf);
+        dynamic_buffer_append_str(write_buffer, buf);
     }
 
     // 构建空行
-    dynamic_buffer_append(write_buffer, "\r\n");
+    dynamic_buffer_append_str(write_buffer, "\r\n");
 
     // todo: 构建响应体
-    //  dynamic_buffer_append(write_buffer, content_body);
+    //  dynamic_buffer_append_str(write_buffer, content_body);
 
     return 0;
 }
