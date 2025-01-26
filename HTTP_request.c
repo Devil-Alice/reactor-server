@@ -105,9 +105,9 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffe
     // 更新line_start，现在位置为method_end + 1，+1是因为空格
     line_start = set_first_splited_string_to(&HTTP_request->method, line_start, line_end, " ");
     // 继续从第一个空格之后查找url
-    line_start = set_first_splited_string_to(&HTTP_request->method, line_start + 1, line_end, " ");
+    line_start = set_first_splited_string_to(&HTTP_request->url, line_start + 1, line_end, " ");
     // 剩下的就是http_version，结尾是\r\n的前一位
-    set_first_splited_string_to(&HTTP_request->method, line_start + 1, line_end, NULL);
+    set_first_splited_string_to(&HTTP_request->HTTP_version, line_start + 1, line_end, NULL);
 
     return true;
 }

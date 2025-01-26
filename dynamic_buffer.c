@@ -150,7 +150,7 @@ char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
 
     // 更新read_pos，相当于舍弃了data_start一直到str的这部分字符串
     if (pos != NULL)
-        dynamic_buffer->read_pos += pos - data_start + strlen(str);
+        dynamic_buffer->read_pos += (pos - data_start) + strlen(str);
 
     return pos;
 }

@@ -77,6 +77,11 @@ int callback_TCP_server_accept(void *arg_TCP_server)
         return -1;
     }
 
+    //设置非阻塞模式
+    int flag = fcntl(client_fd, F_GETFL);
+    flag |= O_NONBLOCK;
+    fcntl(client_fd, F_SETFL, flag);
+
     event_loop_t *next_event_loop = thread_pool_get_next_event_loop(TCP_server->thread_pool);
     TCP_connection_t *TCP_connection = TCP_connection_create(client_fd, next_event_loop);
 

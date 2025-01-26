@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include "HTTP_request.h"
 #include "HTTP_response.h"
 #include "log.h"
@@ -115,14 +116,23 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     while (1)
     {
         len = read(TCP_connection->channel->fd, buf, sizeof(buf) - 1);
-        if (len <= 0)
+        if (len == 0)
         {
-            if (len < 0)
+            // 关闭连接
+            return -1;
+        }
+        else if (len < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                // 当前没有数据可读取，返回
+                break;
+            }
+            else
             {
                 perror("callback_TCP_connection_read");
                 return -1;
             }
-            break;
         }
 
         // 这里传入的buf虽然时栈数据，但是函数内部会将其通过memcpy复制到堆内存中
