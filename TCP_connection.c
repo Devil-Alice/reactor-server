@@ -153,6 +153,15 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
     LOG_DEBUG("%s write connection data", TCP_connection->event_loop->thread_name);
 
+    // todo: 非常重要！！！！！！！！！！！！！！！！！
+    //  有时epoll只检测到了写事件，但是还没检测到读事件，所以这里需要根据情况判断，如果可以单独执行写那么就可以继续执行
+    // 如果不能写事件单独执行，例如本程序中的写事件，就会陷入死循环，并且eventloop会等待线程join，就导致本次请求永远无法响应，那么就需要
+    if (!(TCP_connection->channel->triggered_events & CHANNEL_EVENT_READ))
+    {
+        LOG_DEBUG("callback_TCP_connection_write failed: read event is not triggered");
+        return -1;
+    }
+
     while (1)
     {
         // todo: 此函数是在一个子线程中执行的，和读函数同时运行，所以要保证该函数在有数据的时候才写入

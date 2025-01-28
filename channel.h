@@ -14,6 +14,7 @@ typedef struct channel
 {
     int fd;
     int events;
+    int triggered_events;
     void *args;
     channel_handle_func read_callback;
     channel_handle_func write_callback;

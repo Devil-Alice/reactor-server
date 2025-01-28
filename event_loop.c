@@ -191,10 +191,16 @@ int event_loop_process_event(event_loop_t *event_loop, int fd, int type)
 
     // 根据传入的type判断执行读还是写回调
     if (type == CHANNEL_EVENT_READ)
+    {
+        channel->triggered_events |= CHANNEL_EVENT_READ;
         channel->read_callback(channel->args);
+    }
 
     if (type == CHANNEL_EVENT_WRITE)
+    {
+        channel->triggered_events |= CHANNEL_EVENT_WRITE;
         channel->write_callback(channel->args);
+    }
 
     return 0;
 }

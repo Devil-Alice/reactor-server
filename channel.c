@@ -9,6 +9,7 @@ channel_t *channel_create(int fd, int events, channel_handle_func rcallback, cha
     channel_t *channel = (channel_t *)malloc(sizeof(channel_t));
     channel->fd = fd;
     channel->events = events;
+    channel->triggered_events = 0;
     channel->read_callback = rcallback;
     channel->write_callback = wcallback;
     channel->destroy_callback = dcallback;
@@ -21,9 +22,9 @@ void channel_destroy(channel_t *channel)
     if (channel == NULL)
         return;
 
-    //这里的args交给销毁回调释放
-    // if (channel->args != NULL)
-    //     free(channel->args);
+    // 这里的args交给销毁回调释放
+    //  if (channel->args != NULL)
+    //      free(channel->args);
 
     free(channel);
     channel == NULL;
