@@ -49,7 +49,6 @@ int channel_map_remove(channel_map_t *channel_map, int fd)
         return -1;
     }
 
-    free(channel_map->list[fd]);
     channel_map->list[fd] == NULL;
 
     return 0;

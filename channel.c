@@ -21,8 +21,9 @@ void channel_destroy(channel_t *channel)
     if (channel == NULL)
         return;
 
-    if (channel->args != NULL)
-        free(channel->args);
+    //这里的args交给销毁回调释放
+    // if (channel->args != NULL)
+    //     free(channel->args);
 
     free(channel);
     channel == NULL;

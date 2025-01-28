@@ -8,17 +8,14 @@
 
 TCP_server_t *TCP_server_create(unsigned short port, int threads_capacity)
 {
-    LOG_DEBUG("create TCP server");
     TCP_server_t *TCP_server = (TCP_server_t *)malloc(sizeof(TCP_server_t));
-    TCP_server->thread_pool = thread_pool_create(event_loop_create_main(), 10);
+    TCP_server->thread_pool = thread_pool_create(event_loop_create_main(), threads_capacity);
     TCP_server->listener = listener_create(port);
-    LOG_DEBUG("create TCP server successfully");
     return TCP_server;
 }
 
 listener_t *listener_create(unsigned short port)
 {
-    LOG_DEBUG("create listener");
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
@@ -59,7 +56,6 @@ listener_t *listener_create(unsigned short port)
     listener->port = port;
     listener->fd = sockfd;
 
-    LOG_DEBUG("create listener successfully");
     return listener;
 }
 
@@ -77,7 +73,9 @@ int callback_TCP_server_accept(void *arg_TCP_server)
         return -1;
     }
 
-    //设置非阻塞模式
+    LOG_DEBUG("listen fd(%d) accpet a new client fd(%d)", TCP_server->listener->fd, client_fd);
+
+    // 设置非阻塞模式
     int flag = fcntl(client_fd, F_GETFL);
     flag |= O_NONBLOCK;
     fcntl(client_fd, F_SETFL, flag);
@@ -90,8 +88,6 @@ int callback_TCP_server_accept(void *arg_TCP_server)
 
 int TCP_server_run(TCP_server_t *TCP_server)
 {
-    LOG_DEBUG("TCP server start");
-
     // 构建channel，添加任务，让eventloop检测读事件，因为是读取客户端的连接，所以只需要传入读回调，服务器关闭时会自动销毁
     channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, NULL, TCP_server);
 
@@ -101,9 +97,7 @@ int TCP_server_run(TCP_server_t *TCP_server)
     thread_pool_run(TCP_server->thread_pool);
 
     // 单独启用主线程的eventloop
-    LOG_DEBUG("main event loop is running");
-    LOG_DEBUG("TCP server is running");
     event_loop_run(TCP_server->thread_pool->main_event_loop);
-    
+
     return 0;
 }

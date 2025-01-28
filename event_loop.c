@@ -12,9 +12,7 @@
 
 event_loop_t *event_loop_create_main(void)
 {
-    LOG_DEBUG("create main event loop");
     event_loop_t *event_loop = event_loop_create(NULL);
-    LOG_DEBUG("create main event loop successfully");
     return event_loop;
 }
 
@@ -59,7 +57,7 @@ event_loop_t *event_loop_create(char *thread_name)
 int event_loop_run(event_loop_t *event_loop)
 {
     assert(event_loop != NULL);
-    LOG_DEBUG("event loop running");
+    LOG_DEBUG("%s event loop running", event_loop->thread_name);
     // 比较线程id是否相等，如果不等就是错误
     if (event_loop->thread_id != pthread_self())
     {
@@ -78,7 +76,6 @@ int event_loop_run(event_loop_t *event_loop)
 
 int event_loop_add_task(event_loop_t *event_loop, channel_t *channel, int task_type)
 {
-    LOG_DEBUG("add event loop task");
     pthread_mutex_lock(&(event_loop->mutex));
     channel_task_t *channel_task = malloc(sizeof(channel_task_t));
     channel_task->channel = channel;
@@ -92,13 +89,12 @@ int event_loop_add_task(event_loop_t *event_loop, channel_t *channel, int task_t
     但是通常来讲，我们的主线程只负责接收客户端的连接请求，不负责处理
     所以，如果是主线程执行到了这个函数，那么就唤醒子线程，让子线程去处理接下来的操作
     */
-
     if (event_loop->thread_id == pthread_self())
         event_loop_manage_tasks(event_loop); // 处理动作
     else
         event_loop_wakeup_event(event_loop); // 唤醒可能正在epoll阻塞的子线程
 
-    LOG_DEBUG("add event loop task successfully");
+    // LOG_DEBUG("add event loop task > fd(%d), type(%d)", channel->fd, task_type);
     return 0;
 }
 
@@ -125,15 +121,20 @@ int event_loop_remove_channel(event_loop_t *event_loop, channel_t *channel)
         perror("event_loop_remove_channel");
         return -1;
     }
-    return event_loop->dispatcher->remove(event_loop, channel);
-}
-
-int event_loop_destroy_channel(event_loop_t *event_loop, channel_t *channel)
-{
-    channel_map_t *channel_map = event_loop->channel_map;
-    channel_map_remove(channel_map, channel->fd);
+    // 先从epoll树中移除
+    int ret = event_loop->dispatcher->remove(event_loop, channel);
     close(channel->fd);
-    return 0;
+
+    // 再取消channelmap中的映射
+    channel_map_remove(channel_map, channel->fd);
+
+    // 执行channel的销毁回调
+    if (channel->destroy_callback != NULL && channel->args != NULL)
+        channel->destroy_callback(channel->args);
+
+    channel_destroy(channel);
+
+    return ret;
 }
 
 int event_loop_modify_channel(event_loop_t *event_loop, channel_t *channel)
@@ -200,6 +201,7 @@ int event_loop_process_event(event_loop_t *event_loop, int fd, int type)
 
 int event_loop_wakeup_event(event_loop_t *event_loop)
 {
+    LOG_DEBUG("%s wake up event loop through fd(%d)", event_loop->thread_name, event_loop->socket_pair[0]);
     const char *msg = "wakeup signal";
     write(event_loop->socket_pair[0], msg, strlen(msg));
     return 0;

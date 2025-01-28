@@ -30,9 +30,6 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection)
     if (TCP_connection == NULL)
         return;
 
-    if (TCP_connection->channel != NULL)
-        channel_destroy(TCP_connection->channel);
-
     if (TCP_connection->read_buf != NULL)
         dynamic_buffer_destroy(TCP_connection->read_buf);
 
@@ -53,7 +50,7 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
     // 处理http请求的函数：
     // todo: 这里的process函数最好另外创建一个文件单独写，并且，处理各种url的函数也写在内部，通过一个链表存放url与其处理函数的关系
 
-    LOG_DEBUG("processing requet > method(%s), url(%s)", HTTP_request->method, HTTP_request->url);
+    LOG_DEBUG("%s processing requet > method(%s), url(%s)", TCP_connection->event_loop->thread_name, HTTP_request->method, HTTP_request->url);
 
     // 处理请求数据，完善response中的内容
     // 检查
@@ -74,14 +71,12 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
         HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
         // 生成响应体数据
         dynamic_buffer_append_str(HTTP_response->content, "test");
-
     }
     // 请求处理完毕
 
     // 将获取到的响应构建成字符串写入write_buf
     HTTP_response_build(HTTP_response, TCP_connection->write_buf);
     TCP_connection->response_complete = 1;
-
 
     // 此时write_buf中有数据了，但是TCP_connection又不能直接发送
     // 所以需要通过设置channel的读事件为启用，之后添加eventloop的任务
@@ -109,8 +104,8 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
  */
 int callback_TCP_connection_read(void *arg_TCP_connection)
 {
-    LOG_DEBUG("read connection data");
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
+    LOG_DEBUG("%s read connection data", TCP_connection->event_loop->thread_name);
 
     char buf[1024] = {0};
     int len = 0;
@@ -154,9 +149,9 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
 
 int callback_TCP_connection_write(void *arg_TCP_connection)
 {
-    LOG_DEBUG("write connection data");
 
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
+    LOG_DEBUG("%s write connection data", TCP_connection->event_loop->thread_name);
 
     while (1)
     {
@@ -205,13 +200,6 @@ int callback_TCP_connection_destroy(void *arg_TCP_connection)
 {
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
 
-    // 新建一个eventloop的任务，将channel从epoll树中删除
-    event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
-    // 释放channel_map中的
-    channel_map_remove(TCP_connection->event_loop->channel_map, TCP_connection->channel->fd);
-    // 释放channel，该操作在TCP_connection_destroy存在
-    //  channel_destroy(TCP_connection->channel);
-    // 释放tcp_connection
     TCP_connection_destroy(TCP_connection);
     return 0;
 }
