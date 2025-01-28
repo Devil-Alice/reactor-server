@@ -1,4 +1,5 @@
 #pragma once
+#include <pthread.h>
 
 typedef struct dynamic_buffer
 {
@@ -6,6 +7,7 @@ typedef struct dynamic_buffer
     int capacity;
     int read_pos;
     int write_pos;
+    pthread_mutex_t mutex;
 } dynamic_buffer_t;
 
 dynamic_buffer_t *dynamic_buffer_create(int capasicy);

@@ -11,6 +11,8 @@ typedef struct TCP_connection
     channel_t *channel;
     dynamic_buffer_t *read_buf;
     dynamic_buffer_t *write_buf;
+    /// @brief 表示该响应数据以构建完毕
+    int response_complete;
 } TCP_connection_t;
 
 TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop);

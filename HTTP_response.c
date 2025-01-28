@@ -54,6 +54,7 @@ int HTTP_response_build(HTTP_response_t *HTTP_response, dynamic_buffer_t *write_
         HTTP_response_header_t *header = (HTTP_response_header_t *)(node->data);
         sprintf(buf, "%s: %s\r\n", header->key, header->value);
         dynamic_buffer_append_str(write_buffer, buf);
+        node = node->next;
     }
 
     // 构建空行

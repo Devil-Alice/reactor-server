@@ -47,11 +47,11 @@ event_loop_t *thread_pool_get_next_event_loop(thread_pool_t *thread_pool)
     assert(thread_pool && thread_pool->is_start);
 
     // 必须由主线程执行，所以需要检查当前运行的是不是主线程
-    if (thread_pool->main_event_loop->thread_id != pthread_self())
-    {
-        perror("thread_pool_run");
-        return NULL;
-    }
+    // if (thread_pool->main_event_loop->thread_id != pthread_self())
+    // {
+    //     perror("thread_pool_run");
+    //     return NULL;
+    // }
 
     // 如果线程池没有子线程时，应该由主线程的event_loop来处理事件，也就是单反应堆模式
     event_loop_t *event_loop = thread_pool->main_event_loop;

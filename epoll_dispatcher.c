@@ -80,13 +80,38 @@ static int epoll_dispatcher_dispatch(event_loop_t *event_loop, int timeout_ms)
             continue;
         }
 
+        // 读写操作同时进行，但是单次循环只进行一次读写操作
+        pthread_t read_thread_id = -1;
+        pthread_t write_thread_id = -1;
         // 触发了读事件
         if (events & EPOLLIN)
-            event_loop_process_event(event_loop, fd, CHANNEL_EVENT_READ);
+        {
+            // event_loop_process_event(event_loop, fd, CHANNEL_EVENT_READ);
+            // 使用malloc申请内存，在线程函数中执行完毕销毁
+            arg_event_data_t *event_data = (arg_event_data_t *)malloc(sizeof(arg_event_data_t));
+            event_data->event_loop = event_loop;
+            event_data->fd = fd;
+            event_data->type = CHANNEL_EVENT_READ;
+            // 这里另起一个线程
+            pthread_create(&read_thread_id, NULL, threadfunc_event_loop_process_event, event_data);
+        }
 
         // 触发了写事件
         if (events & EPOLLOUT)
-            event_loop_process_event(event_loop, fd, CHANNEL_EVENT_WRITE);
+        {
+            // event_loop_process_event(event_loop, fd, CHANNEL_EVENT_WRITE);
+            arg_event_data_t *event_data = (arg_event_data_t *)malloc(sizeof(arg_event_data_t));
+            event_data->event_loop = event_loop;
+            event_data->fd = fd;
+            event_data->type = CHANNEL_EVENT_WRITE;
+            pthread_create(&write_thread_id, NULL, threadfunc_event_loop_process_event, event_data);
+        }
+
+        // 等待读写操作结束
+        if (read_thread_id != -1)
+            pthread_join(read_thread_id, NULL);
+        if (write_thread_id != -1)
+            pthread_join(write_thread_id, NULL);
     }
     return 0;
 }

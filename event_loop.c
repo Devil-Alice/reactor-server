@@ -205,6 +205,15 @@ int event_loop_wakeup_event(event_loop_t *event_loop)
     return 0;
 }
 
+void *threadfunc_event_loop_process_event(void *arg_event_data)
+{
+    arg_event_data_t *event_data = (arg_event_data_t *)arg_event_data;
+    event_loop_process_event(event_data->event_loop, event_data->fd, event_data->type);
+    // 释放传入参数
+    free(arg_event_data);
+    return (void *)0;
+}
+
 int event_loop_socket_pair_read(void *args)
 {
     // 这个函数的目的并不是读取数据，而是为了唤醒(解除阻塞)epoll而已，所以读取到了数据之后，什么都不用做

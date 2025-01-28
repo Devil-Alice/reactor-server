@@ -22,6 +22,7 @@ dynamic_buffer_t *dynamic_buffer_create(int capasicy)
     dynamic_buffer->capacity = capasicy;
     dynamic_buffer->read_pos = 0;
     dynamic_buffer->write_pos = 0;
+    pthread_mutex_init(&dynamic_buffer->mutex, NULL);
     return dynamic_buffer;
 }
 
@@ -35,6 +36,8 @@ int dynamic_buffer_destroy(dynamic_buffer_t *dynamic_buffer)
         free(dynamic_buffer->data);
         dynamic_buffer->data = NULL;
     }
+
+    pthread_mutex_destroy(&dynamic_buffer->mutex);
 
     free(dynamic_buffer);
     dynamic_buffer = NULL;
@@ -157,13 +160,19 @@ char *dynamic_buffer_find_pos(dynamic_buffer_t *dynamic_buffer, char *str)
 
 int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *src_buffer)
 {
-    // 没催按照64的大小追加
-    int size = 128;
+    // 每次按照1024的大小追加
+    int size = 1024;
     while (1)
     {
+        pthread_mutex_lock(&dest_buffer->mutex);
         // 获取实际可读的大小
         int available_src_size = dynamic_buffer_available_read_size(src_buffer);
-        // 最大64
+        if (available_src_size == 0)
+        {
+            pthread_mutex_unlock(&dest_buffer->mutex);
+            break;
+        }
+        // 最大1024
         size = available_src_size < size ? available_src_size : size;
         int ret = dynamic_buffer_append_data(dest_buffer, src_buffer->data, size);
         if (ret == -1)
@@ -172,6 +181,7 @@ int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *
             return -1;
         }
         src_buffer->read_pos += size;
+        pthread_mutex_unlock(&dest_buffer->mutex);
     }
 
     return 0;

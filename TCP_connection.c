@@ -19,6 +19,7 @@ TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
     // 创建一个channel，用于处理http请求以及回复http响应，这里将事件设置为读写事件
     channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ | CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy, TCP_connection);
     TCP_connection->channel = channel;
+    TCP_connection->response_complete = 0;
 
     event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
     return TCP_connection;
@@ -62,30 +63,31 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
         return false;
     }
 
-    if (strcmp(HTTP_request->url, "/"))
+    if (strcmp(HTTP_request->url, "/test") == 0)
     {
         // url为/发送主页index.html
         HTTP_response->status = HTTP_STATUS_OK;
         sprintf(HTTP_response->status_description, "%s", "OK");
-        HTTP_response_add_header(HTTP_response, "Content-Type", "test/plain");
+        HTTP_response_add_header(HTTP_response, "Content-Type", "text/plain");
         char size_buf[64] = {0};
-        sprintf(size_buf, "%ld", sizeof("index.html"));
+        sprintf(size_buf, "%ld", strlen("test"));
         HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
         // 生成响应体数据
-        dynamic_buffer_append_str(HTTP_response->content, "index.html");
-        // 构建整个响应数据，写入write_buf中
-        HTTP_response_build(HTTP_response, TCP_connection->write_buf);
+        dynamic_buffer_append_str(HTTP_response->content, "test");
+
     }
     // 请求处理完毕
 
     // 将获取到的响应构建成字符串写入write_buf
     HTTP_response_build(HTTP_response, TCP_connection->write_buf);
+    TCP_connection->response_complete = 1;
+
 
     // 此时write_buf中有数据了，但是TCP_connection又不能直接发送
     // 所以需要通过设置channel的读事件为启用，之后添加eventloop的任务
     // 这样dispatch函数检测到channel.fd的epollout事件就会调用channel的write回调函数进行发送响应的操作
-    channel_enable_write_event(TCP_connection->channel, true);
-    event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_MDOIFY);
+    // channel_enable_write_event(TCP_connection->channel, true);
+    // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_MDOIFY);
 
     // HTTP_request在此已经失去了作用，需要释放
     HTTP_request_destroy(HTTP_request);
@@ -107,12 +109,15 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
  */
 int callback_TCP_connection_read(void *arg_TCP_connection)
 {
+    LOG_DEBUG("read connection data");
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
 
     char buf[1024] = {0};
     int len = 0;
     int total_len = 0;
 
+    //  读写同时发生，需要对临界资源加锁，readbuf只有本函数使用，所以主要是对writebuf上锁
+    // 读取函数加锁的地方在构建响应数据函数中：HTTP_response_build
     while (1)
     {
         len = read(TCP_connection->channel->fd, buf, sizeof(buf) - 1);
@@ -125,7 +130,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                // 当前没有数据可读取，返回
+                // 注意：只适用于非阻塞模式，表示当前没有数据可读取，返回
                 break;
             }
             else
@@ -140,6 +145,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
         total_len += len;
     }
 
+    // 处理请求
     HTTP_response_t *HTTP_response = HTTP_response_create();
     TCP_connection_process_request(TCP_connection, HTTP_response);
 
@@ -148,31 +154,50 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
 
 int callback_TCP_connection_write(void *arg_TCP_connection)
 {
+    LOG_DEBUG("write connection data");
+
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
 
     while (1)
     {
+        // todo: 此函数是在一个子线程中执行的，和读函数同时运行，所以要保证该函数在有数据的时候才写入
+
+        // 读取函数加锁的地方在构建响应数据函数中：HTTP_response_build
+        pthread_mutex_lock(&TCP_connection->write_buf->mutex);
         // 取出写buf的可读数据
-        char *buf = dynamic_buffer_availabel_read_data(TCP_connection->write_buf);
         int max_len = dynamic_buffer_available_read_size(TCP_connection->write_buf);
+        if (max_len == 0 && !TCP_connection->response_complete)
+        {
+            // 没有可读数据，并且响应数据没有完成，此时：释放锁、跳过
+            pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
+            usleep(1);
+            continue;
+        }
+
+        char *buf = dynamic_buffer_availabel_read_data(TCP_connection->write_buf);
         // 计算大小，最多一次发送1024字节
         int buf_len = max_len < 1024 ? max_len : 1024;
         int len = write(TCP_connection->channel->fd, buf, buf_len);
         // 读完之后将指针后移
         TCP_connection->write_buf->read_pos += buf_len;
+        pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
 
+        // 当len为0时，跳过继续发送，同时如果response_complete那么才退出发送
         if (len == 0)
         {
-            break;
+            if (TCP_connection->response_complete)
+                break;
+            continue;
         }
         else if (len == -1)
         {
-            break;
+            return -1;
         }
+        usleep(1);
     }
 
     // 处理完成，客户端断开连接的操作应该在epollwait处检测
-    // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
+    event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
     return 0;
 }
 
