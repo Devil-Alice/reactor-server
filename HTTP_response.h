@@ -4,7 +4,7 @@
 
 enum HTTP_STATUS
 {
-    //未定义状态
+    // 未定义状态
     HTTP_STATUS_UNKNOWN = 0,
 
     // Informational 1xx
@@ -90,18 +90,22 @@ typedef struct HTTP_response
 
     // 响应头，使用链表来存储，内部存放HTTP_response_header*
     linked_list_t *HTTP_response_headers;
-    dynamic_buffer_t *content;
+    dynamic_buffer_t *write_buffer;
 
 } HTTP_response_t;
 
 HTTP_response_header_t *HTTP_response_header_create(char *key, char *value);
 void HTTP_response_header_destroy(HTTP_response_header_t *HTTP_response_header);
 
-HTTP_response_t *HTTP_response_create();
+/// @brief 创建一个响应结构体
+/// @param write_buffer 传入一个buffer，用于大文件的发送，达成边写边发的功能
+/// @return 
+HTTP_response_t *HTTP_response_create(dynamic_buffer_t *write_buffer);
 void HTTP_response_destroy(HTTP_response_t *HTTP_response);
 int HTTP_response_add_header(HTTP_response_t *HTTP_response, char *key, char *value);
-/// @brief 用于构建响应数据的函数，也就是将HTTP_response所有的数据构建成一个完整的字符串，存入write_buffer中
-/// @param HTTP_response 
-/// @param write_buffer 用于写入的buffer
-/// @return 
-int HTTP_response_build(HTTP_response_t *HTTP_response, dynamic_buffer_t *write_buffer);
+/// @brief 用于构建响应数据的函数，也就是将HTTP_response所有的数据构建成一个完整的字符串，存入自身的write_buffer中（这个buffer指向外界）
+/// @return 成功返回0，失败返回-1
+/// @note 构建的数据不包括响应体，响应体数据由于可能是大文件数据，必须由使用者手动构建写入
+int HTTP_response_build(HTTP_response_t *HTTP_response);
+char *HTTP_response_get_status_description(int status);
+char *HTTP_response_get_content_type(const char *file_name);

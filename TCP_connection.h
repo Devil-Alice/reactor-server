@@ -21,7 +21,7 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection);
 /// @param TCP_connection tcp连接用
 /// @param HTTP_response 返回数据：处理好的响应数据，注意时堆内存中的，用完需要释放
 /// @return 是否成功处理
-bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_response_t *HTTP_response);
+bool TCP_connection_process_request(TCP_connection_t *TCP_connection);
 
 // 处理处理连接请求的函数
 int callback_TCP_connection_read(void *arg_TCP_connection);

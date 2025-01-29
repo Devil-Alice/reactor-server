@@ -1,0 +1,100 @@
+#include "HTTP_service.h"
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+#include "log.h"
+
+int HTTP_service_process(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
+{
+    LOG_DEBUG("processing requet > method(%s), url(%s)", HTTP_request->method, HTTP_request->url);
+
+    // 处理请求数据，完善response中的内容
+    // 检查
+    if (HTTP_request == NULL)
+    {
+        perror("HTTP_request_process_request");
+        return false;
+    }
+    // 处理静态资源
+    int ret = HTTP_service_process_static(HTTP_request, HTTP_response);
+
+    // 请求处理完毕，资源不存在
+    if (ret != HTTP_STATUS_OK)
+    {
+        HTTP_response->status = ret;
+        HTTP_service_response_error(HTTP_response);
+    }
+
+    return true;
+    return 0;
+}
+
+int HTTP_service_process_static(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
+{
+    LOG_DEBUG("processing static resource(.%s)", HTTP_request->url);
+    // 此时的url视为文件目录，具体位置为工作目录下的url位置，所以在解析路径，要在最前面加上 .
+    char path[128] = {0};
+    sprintf(path, ".%s", HTTP_request->url);
+    struct stat file_stat;
+    int ret = stat(path, &file_stat);
+    // 文件不存在，返回
+    if (ret == -1)
+    {
+        LOG_DEBUG("static resource(%s) doesn't exist", path);
+        return HTTP_STATUS_NOT_FOUND;
+    }
+
+    // 生成响应体数据
+    int fd = open(path, O_RDONLY);
+    if (fd == -1)
+    {
+        LOG_DEBUG("HTTP_service_process_static open error");
+        return -1;
+    }
+
+    // 生成响应数据
+    HTTP_response->status = HTTP_STATUS_OK;
+    sprintf(HTTP_response->status_description, "%s", "OK");
+    HTTP_response_add_header(HTTP_response, "Content-Type", HTTP_response_get_content_type(path));
+    char size_buf[64] = {0};
+    sprintf(size_buf, "%ld", file_stat.st_size);
+    HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
+    // 先将响应头写入
+    HTTP_response_build(HTTP_response);
+
+    // 读取文件，写入buffer中
+    int len = -1;
+    char buf[1024] = {0};
+    while ((len = read(fd, buf, sizeof(buf))) > 0)
+        dynamic_buffer_append_data(HTTP_response->write_buffer, buf, len);
+
+    return HTTP_STATUS_OK;
+}
+
+int HTTP_service_response_error(HTTP_response_t *HTTP_response)
+{
+    char path[128] = {0};
+    sprintf(path, "./%d.html", HTTP_response->status);
+    struct stat file_stat;
+    stat(path, &file_stat);
+    
+    // 生成响应数据
+    sprintf(HTTP_response->status_description, "%s", HTTP_response_get_status_description(HTTP_response->status));
+    HTTP_response_add_header(HTTP_response, "Content-Type", HTTP_response_get_content_type(path));
+    char size_buf[64] = {0};
+    sprintf(size_buf, "%ld", file_stat.st_size);
+    HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
+    // 先将响应头写入
+    HTTP_response_build(HTTP_response);
+    
+    // 读取文件，写入buffer中
+    int fd = open(path, O_RDONLY);
+    int len = -1;
+    char buf[1024] = {0};
+    while ((len = read(fd, buf, sizeof(buf))) > 0)
+        dynamic_buffer_append_data(HTTP_response->write_buffer, buf, len);
+    return 0;
+}

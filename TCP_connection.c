@@ -7,6 +7,7 @@
 #include "HTTP_request.h"
 #include "HTTP_response.h"
 #include "log.h"
+#include "HTTP_service.h"
 
 // 创建一个TCP_connection对象，创建对应的channel并添加任务
 TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
@@ -40,42 +41,25 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection)
     return;
 }
 
-bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_response_t *HTTP_response)
+bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
 {
     // 接收到了数据后，就需要对接收到的请求进行解析
     // 解析函数,解析http请求的内容
     HTTP_request_t *HTTP_request = HTTP_request_create();
+    HTTP_response_t *HTTP_response = HTTP_response_create(TCP_connection->write_buf);
+
     HTTP_request_parse_reqest(HTTP_request, TCP_connection->read_buf);
     // 到目前为止HTTP_request已经有了请求的各种数据，例如method,url等，接下来就是处理这个请求，该如何给客户端发送响应
     // 处理http请求的函数：
-    // todo: 这里的process函数最好另外创建一个文件单独写，并且，处理各种url的函数也写在内部，通过一个链表存放url与其处理函数的关系
 
-    LOG_DEBUG("%s processing requet > method(%s), url(%s)", TCP_connection->event_loop->thread_name, HTTP_request->method, HTTP_request->url);
-
-    // 处理请求数据，完善response中的内容
-    // 检查
-    if (HTTP_request == NULL)
+    int ret = HTTP_service_process(HTTP_request, HTTP_response);
+    if (ret == -1)
     {
-        perror("HTTP_request_process_request");
+        LOG_DEBUG("TCP_connection_process_request error");
         return false;
     }
-
-    if (strcmp(HTTP_request->url, "/test") == 0)
-    {
-        // url为/发送主页index.html
-        HTTP_response->status = HTTP_STATUS_OK;
-        sprintf(HTTP_response->status_description, "%s", "OK");
-        HTTP_response_add_header(HTTP_response, "Content-Type", "text/plain");
-        char size_buf[64] = {0};
-        sprintf(size_buf, "%ld", strlen("test"));
-        HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
-        // 生成响应体数据
-        dynamic_buffer_append_str(HTTP_response->content, "test");
-    }
-    // 请求处理完毕
-
-    // 将获取到的响应构建成字符串写入write_buf
-    HTTP_response_build(HTTP_response, TCP_connection->write_buf);
+    
+    // 请求处理完毕,并且已经写入write_buffer
     TCP_connection->response_complete = 1;
 
     // 此时write_buf中有数据了，但是TCP_connection又不能直接发送
@@ -85,6 +69,7 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
     // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_MDOIFY);
 
     // HTTP_request在此已经失去了作用，需要释放
+    HTTP_response_destroy(HTTP_response);
     HTTP_request_destroy(HTTP_request);
 
     // ！注意！：此处的代码逻辑有一个潜在的问题：
@@ -93,7 +78,6 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection, HTTP_respo
     // 也就是说，我们必须等待所有数据全部写入buffer中才能发送出去
     // 如果数据量不大，那么buffer可以申请空间成功，但是如果发送的数据非常大（例如8GB），那么buffer很有可能申请空间失败
     // 解决方案：需要一边写入buffer一边发送出去，分批次发送，不能等待所有数据准备完毕
-    // todo: 完成边写边发
 
     return true;
 }
@@ -141,8 +125,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     }
 
     // 处理请求
-    HTTP_response_t *HTTP_response = HTTP_response_create();
-    TCP_connection_process_request(TCP_connection, HTTP_response);
+    TCP_connection_process_request(TCP_connection);
 
     return total_len;
 }
