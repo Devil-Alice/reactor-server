@@ -43,16 +43,10 @@ void TCP_connection_destroy(TCP_connection_t *TCP_connection)
 
 bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
 {
-    // 接收到了数据后，就需要对接收到的请求进行解析
-    // 解析函数,解析http请求的内容
-    HTTP_request_t *HTTP_request = HTTP_request_create();
-    HTTP_response_t *HTTP_response = HTTP_response_create(TCP_connection->write_buf);
 
-    HTTP_request_parse_reqest(HTTP_request, TCP_connection->read_buf);
-    // 到目前为止HTTP_request已经有了请求的各种数据，例如method,url等，接下来就是处理这个请求，该如何给客户端发送响应
-    // 处理http请求的函数：
+    HTTP_request_t *HTTP_request = HTTP_request_create(TCP_connection);
 
-    int ret = HTTP_service_process(HTTP_request, HTTP_response);
+    int ret = HTTP_service_process(HTTP_request);
     if (ret == -1)
     {
         LOG_DEBUG("TCP_connection_process_request error");
@@ -69,7 +63,6 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
     // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_MDOIFY);
 
     // HTTP_request在此已经失去了作用，需要释放
-    HTTP_response_destroy(HTTP_response);
     HTTP_request_destroy(HTTP_request);
 
     // ！注意！：此处的代码逻辑有一个潜在的问题：

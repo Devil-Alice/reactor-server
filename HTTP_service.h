@@ -1,8 +1,20 @@
 #pragma once
 #include "HTTP_request.h"
-#include "HTTP_response.h"
+#include "TCP_connection.h"
 
-int HTTP_service_process(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response);
+typedef struct HTTP_service_map
+{
+    char *url;
+    char *method;
+    int (*service_process_callback)(HTTP_request_t *);
+} HTTP_service_map;
+
+typedef struct HTTP_service
+{
+    linked_list_t *HTTP_service_list;
+} HTTP_service_t;
+
+int HTTP_service_process(HTTP_request_t *HTTP_request);
 /// @brief 处理静态资源的函数，资源如果存在则写入response中
 /// @param HTTP_request
 /// @param HTTP_response

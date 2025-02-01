@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "linked_list.h"
 #include "dynamic_buffer.h"
+#include "TCP_connection.h"
 #include "HTTP_response.h"
 
 /// @brief 描述http请求头的结构体
@@ -25,6 +26,7 @@ typedef struct HTTP_request_header
 /// @note Upgrade-Insecure-Requests: 1
 typedef struct HTTP_request
 {
+    TCP_connection_t *TCP_connection;
     /// @brief 请求行的方法，例如GET、POST、DELETE、UPDATE等
     char *method;
     char *url;
@@ -39,19 +41,19 @@ void HTTP_request_header_destroy(HTTP_request_header_t *HTTP_request_header);
 /**
  * @brief 创建并返回一个HTTP_request_t对象
  */
-HTTP_request_t *HTTP_request_create();
+HTTP_request_t *HTTP_request_create(TCP_connection_t *TCP_connection);
 int HTTP_request_destroy(HTTP_request_t *HTTP_request);
 int HTTP_request_add_header(HTTP_request_t *HTTP_request, char *key, char *value);
 char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key);
-bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
+bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request);
 /// @brief 解析一行请求头
 /// @param HTTP_request http请求对象
 /// @param read_buffer 动态buffer
 /// @return 返回值：1-正常，0-解析到了请求行的末尾空行，-1-解析错误
-int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
+int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request);
 /// @brief 解析HTTP请求，并将结果存储在HTTP_request中
 /// @return 是否解析成功
-bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer);
+bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request);
 
 /// @brief 在str_start到str_end的主字符串中，查找第一个以split_str分割的第一个子字符串（也就是str_start到split_str的子字符串）
 /// @param set_str 传出参数，set_str是需要设置的字符串地址，注意这里为二级指针

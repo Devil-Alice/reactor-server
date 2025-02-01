@@ -7,8 +7,17 @@
 #include <sys/sendfile.h>
 #include "log.h"
 
-int HTTP_service_process(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_response)
+int HTTP_service_process(HTTP_request_t *HTTP_request)
 {
+
+    // 接收到了数据后，就需要对接收到的请求进行解析
+    // 解析函数,解析http请求的内容
+    HTTP_response_t *HTTP_response = HTTP_response_create(HTTP_request->TCP_connection);
+
+    HTTP_request_parse_reqest(HTTP_request);
+    // 到目前为止HTTP_request已经有了请求的各种数据，例如method,url等，接下来就是处理这个请求，该如何给客户端发送响应
+    // 处理http请求：
+
     LOG_DEBUG("processing requet > method(%s), url(%s)", HTTP_request->method, HTTP_request->url);
 
     // 处理请求数据，完善response中的内容
@@ -27,8 +36,8 @@ int HTTP_service_process(HTTP_request_t *HTTP_request, HTTP_response_t *HTTP_res
         HTTP_response->status = ret;
         HTTP_service_response_error(HTTP_response);
     }
+    HTTP_response_destroy(HTTP_response);
 
-    return true;
     return 0;
 }
 
@@ -69,7 +78,7 @@ int HTTP_service_process_static(HTTP_request_t *HTTP_request, HTTP_response_t *H
     int len = -1;
     char buf[1024] = {0};
     while ((len = read(fd, buf, sizeof(buf))) > 0)
-        dynamic_buffer_append_data(HTTP_response->write_buffer, buf, len);
+        dynamic_buffer_append_data(HTTP_response->TCP_connection->write_buf, buf, len);
 
     return HTTP_STATUS_OK;
 }
@@ -80,7 +89,7 @@ int HTTP_service_response_error(HTTP_response_t *HTTP_response)
     sprintf(path, "./%d.html", HTTP_response->status);
     struct stat file_stat;
     stat(path, &file_stat);
-    
+
     // 生成响应数据
     sprintf(HTTP_response->status_description, "%s", HTTP_response_get_status_description(HTTP_response->status));
     HTTP_response_add_header(HTTP_response, "Content-Type", HTTP_response_get_content_type(path));
@@ -89,12 +98,12 @@ int HTTP_service_response_error(HTTP_response_t *HTTP_response)
     HTTP_response_add_header(HTTP_response, "Content-Length", size_buf);
     // 先将响应头写入
     HTTP_response_build(HTTP_response);
-    
+
     // 读取文件，写入buffer中
     int fd = open(path, O_RDONLY);
     int len = -1;
     char buf[1024] = {0};
     while ((len = read(fd, buf, sizeof(buf))) > 0)
-        dynamic_buffer_append_data(HTTP_response->write_buffer, buf, len);
+        dynamic_buffer_append_data(HTTP_response->TCP_connection->write_buf, buf, len);
     return 0;
 }

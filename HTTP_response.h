@@ -1,6 +1,9 @@
 #pragma once
 #include "linked_list.h"
+#include "TCP_connection.h"
 #include "dynamic_buffer.h"
+
+typedef struct TCP_connection TCP_connection_t;
 
 enum HTTP_STATUS
 {
@@ -83,6 +86,8 @@ typedef struct HTTP_response_header
 /// @note Hello, world!
 typedef struct HTTP_response
 {
+    TCP_connection_t *TCP_connection;
+
     // 状态行: 版本 状态码 状态码描述
     char HTTP_version[16];
     enum HTTP_STATUS status;
@@ -90,7 +95,7 @@ typedef struct HTTP_response
 
     // 响应头，使用链表来存储，内部存放HTTP_response_header*
     linked_list_t *HTTP_response_headers;
-    dynamic_buffer_t *write_buffer;
+    // dynamic_buffer_t *write_buffer;
 
 } HTTP_response_t;
 
@@ -99,11 +104,12 @@ void HTTP_response_header_destroy(HTTP_response_header_t *HTTP_response_header);
 
 /// @brief 创建一个响应结构体
 /// @param write_buffer 传入一个buffer，用于大文件的发送，达成边写边发的功能
-/// @return 
-HTTP_response_t *HTTP_response_create(dynamic_buffer_t *write_buffer);
+/// @return
+HTTP_response_t *HTTP_response_create(TCP_connection_t *TCP_connection);
 void HTTP_response_destroy(HTTP_response_t *HTTP_response);
 int HTTP_response_add_header(HTTP_response_t *HTTP_response, char *key, char *value);
 /// @brief 用于构建响应数据的函数，也就是将HTTP_response所有的数据构建成一个完整的字符串，存入自身的write_buffer中（这个buffer指向外界）
+/// @param write_buffer 目标写入的缓冲区
 /// @return 成功返回0，失败返回-1
 /// @note 构建的数据不包括响应体，响应体数据由于可能是大文件数据，必须由使用者手动构建写入
 int HTTP_response_build(HTTP_response_t *HTTP_response);

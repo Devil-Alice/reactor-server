@@ -25,9 +25,10 @@ void HTTP_request_header_destroy(HTTP_request_header_t *HTTP_request_header)
     return;
 }
 
-HTTP_request_t *HTTP_request_create()
+HTTP_request_t *HTTP_request_create(TCP_connection_t *TCP_connection)
 {
     HTTP_request_t *HTTP_request = (HTTP_request_t *)malloc(sizeof(HTTP_request_t));
+    HTTP_request->TCP_connection = TCP_connection;
     HTTP_request->method = NULL;
     HTTP_request->url = NULL;
     HTTP_request->HTTP_version = NULL;
@@ -78,8 +79,9 @@ char *HTTP_request_get_header_value(HTTP_request_t *HTTP_request, char *key)
     return NULL;
 }
 
-bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
+bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request)
 {
+    dynamic_buffer_t *read_buffer = HTTP_request->TCP_connection->read_buf;
     // 取出buffer中的第一行，此时取出的第一行不包括结尾的\r\n
     char *line_start = dynamic_buffer_availabel_read_data(read_buffer);
     // 查找第一次\r\n也就是第一行的结尾在哪里
@@ -112,8 +114,9 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request, dynamic_buffe
     return true;
 }
 
-int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
+int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request)
 {
+    dynamic_buffer_t *read_buffer = HTTP_request->TCP_connection->read_buf;
     // 取出一行
     char *line_start = dynamic_buffer_availabel_read_data(read_buffer);
     char *line_end = dynamic_buffer_find_pos(read_buffer, "\r\n");
@@ -151,12 +154,12 @@ int HTTP_request_parse_reqest_header(HTTP_request_t *HTTP_request, dynamic_buffe
     return 1;
 }
 
-bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *read_buffer)
+bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request)
 {
     // todo: 失败时销毁request
 
     // 解析请求行
-    int flag = HTTP_request_parse_request_line(HTTP_request, read_buffer);
+    int flag = HTTP_request_parse_request_line(HTTP_request);
     if (flag == false)
         return false;
 
@@ -164,7 +167,7 @@ bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *r
     int ret = 0;
     while (1)
     {
-        ret = HTTP_request_parse_reqest_header(HTTP_request, read_buffer);
+        ret = HTTP_request_parse_reqest_header(HTTP_request);
         if (ret == -1)
             return false;
         else if (ret == 0)
@@ -177,7 +180,6 @@ bool HTTP_request_parse_reqest(HTTP_request_t *HTTP_request, dynamic_buffer_t *r
 
     return true;
 }
-
 
 char *set_first_splited_string_to(char **set_str, char *str_start, char *str_end, char *split_str)
 {
