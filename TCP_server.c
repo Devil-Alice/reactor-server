@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <netinet/in.h>
-#include "TCP_connection.h"
 #include <fcntl.h>
+#include "TCP_connection.h"
+#include "HTTP_service.h"
 #include "log.h"
 
 TCP_server_t *TCP_server_create(unsigned short port, int threads_capacity)
@@ -88,6 +89,8 @@ int callback_TCP_server_accept(void *arg_TCP_server)
 
 int TCP_server_run(TCP_server_t *TCP_server)
 {
+    HTTP_service_run();
+
     // 构建channel，添加任务，让eventloop检测读事件，因为是读取客户端的连接，所以只需要传入读回调，服务器关闭时会自动销毁
     channel_t *channel = channel_create(TCP_server->listener->fd, CHANNEL_EVENT_READ, callback_TCP_server_accept, NULL, NULL, TCP_server);
 

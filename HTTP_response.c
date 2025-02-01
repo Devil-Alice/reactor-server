@@ -125,8 +125,17 @@ int HTTP_response_add_header(HTTP_response_t *HTTP_response, char *key, char *va
     return 0;
 }
 
-int HTTP_response_build(HTTP_response_t *HTTP_response)
+int HTTP_response_build_header(HTTP_response_t *HTTP_response, int status, char *content_type, long int content_length)
 {
+    // 构建
+    HTTP_response->status = status;
+    sprintf(HTTP_response->status_description, "%s", HTTP_response_get_status_description(status));
+    HTTP_response_add_header(HTTP_response, "Content-Type", content_type);
+    char len_buf[64] = {0};
+    sprintf(len_buf, "%ld", content_length);
+    HTTP_response_add_header(HTTP_response, "Content-Length", len_buf);
+
+    // 写入buffer
     dynamic_buffer_t *write_buffer = HTTP_response->TCP_connection->write_buf;
     char buf[1024] = {0};
 
@@ -166,6 +175,9 @@ char *HTTP_response_get_status_description(int status)
 
 char *HTTP_response_get_content_type(const char *file_name)
 {
+    if (file_name == NULL)
+        return "text/plain";
+        
     // 通过filename获取文件后缀
     char *dot = strrchr(file_name, '.');
     char *ext = (dot + 1);
