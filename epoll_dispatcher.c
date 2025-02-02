@@ -92,6 +92,12 @@ static int epoll_dispatcher_dispatch(event_loop_t *event_loop, int timeout_ms)
         //  有时epoll只检测到了写事件，但是还没检测到读事件，所以这里需要根据情况判断，如果可以单独执行写那么就可以继续执行
         // 如果不能写事件单独执行，例如本程序中的写事件，就会陷入死循环，并且eventloop会等待线程join，就导致本次请求永远无法响应，那么就需要
 
+        if (!(events & EPOLLIN))
+        {
+            LOG_DEBUG("read event fd(%d) is not triggered, continue", fd);
+            continue;
+        }
+
         // 触发了读事件
         if (events & EPOLLIN)
         {
@@ -153,7 +159,7 @@ int epoll_dispatcher_ctl(event_loop_t *event_loop, channel_t *channel, int opera
 
     ep_data_t *epdata = (ep_data_t *)(event_loop->dispatcher_data);
     struct epoll_event epevent;
-    epevent.events = 0;
+    epevent.events = EPOLLET;
     epevent.data.fd = channel->fd;
 
     if (channel->events & CHANNEL_EVENT_WRITE)

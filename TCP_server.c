@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include "TCP_connection.h"
 #include "HTTP_service.h"
 #include "log.h"
@@ -80,6 +81,10 @@ int callback_TCP_server_accept(void *arg_TCP_server)
     int flag = fcntl(client_fd, F_GETFL);
     flag |= O_NONBLOCK;
     fcntl(client_fd, F_SETFL, flag);
+
+    // 设置超时时间5s
+    struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
+    setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     event_loop_t *next_event_loop = thread_pool_get_next_event_loop(TCP_server->thread_pool);
     TCP_connection_t *TCP_connection = TCP_connection_create(client_fd, next_event_loop);
