@@ -5,7 +5,8 @@ enum CHANNEL_EVENT
 {
     CHANNEL_EVENT_TIMEOUT = 0x01,
     CHANNEL_EVENT_READ = 0x02,
-    CHANNEL_EVENT_WRITE = 0x04
+    CHANNEL_EVENT_WRITE = 0x04,
+    CHANNEL_EVENT_DESTROY = 0x08
 };
 
 typedef int (*channel_handle_func)(void *args);

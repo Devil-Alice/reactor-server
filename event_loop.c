@@ -202,6 +202,9 @@ int event_loop_process_event(event_loop_t *event_loop, int fd, int type)
         channel->write_callback(channel->args);
     }
 
+    if (type == CHANNEL_EVENT_DESTROY)
+        event_loop_remove_channel(event_loop, channel);
+
     return 0;
 }
 

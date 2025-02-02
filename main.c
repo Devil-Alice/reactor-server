@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     chdir(rcs_path);
 
     // 启动多反应堆模型
-    TCP_server_t *TCP_server = TCP_server_create(port, 10);
+    TCP_server_t *TCP_server = TCP_server_create(port, 2);
     TCP_server_run(TCP_server);
 
     return 0;

@@ -115,6 +115,13 @@ int HTTP_service_process_static(HTTP_request_t *HTTP_request, HTTP_response_t *H
         return HTTP_STATUS_NOT_FOUND;
     }
 
+    // 排除目录
+    if (S_ISDIR(file_stat.st_mode) == 1)
+    {
+        LOG_DEBUG("static resource(%s) is a directory", path);
+        return HTTP_STATUS_NOT_FOUND;
+    }
+
     // 生成响应体数据
     int fd = open(path, O_RDONLY);
     if (fd == -1)

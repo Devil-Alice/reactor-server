@@ -76,7 +76,8 @@ static int epoll_dispatcher_dispatch(event_loop_t *event_loop, int timeout_ms)
         if (events & EPOLLERR || events & EPOLLHUP)
         {
             // todo: 目前还未实现和channel的关联，之后再完成这句代码
-            //  epoll_dispatcher_remove(event_loop, channel);
+            LOG_DEBUG("epoll wait errot or hang up");
+            event_loop_process_event(event_loop, fd, CHANNEL_EVENT_DESTROY);
             continue;
         }
 
