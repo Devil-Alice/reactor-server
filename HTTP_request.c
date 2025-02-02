@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "log.h"
 
 HTTP_request_header_t *HTTP_request_header_create(char *key, char *value)
 {
@@ -90,7 +91,7 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request)
 
     if (line_start == NULL || line_end == NULL)
     {
-        perror("HTTP_request_parse_request_line");
+        LOG_ERROR("HTTP_request_parse_request_line");
         return false;
     }
 
@@ -98,7 +99,7 @@ bool HTTP_request_parse_request_line(HTTP_request_t *HTTP_request)
 
     if (line_len <= 0)
     {
-        perror("HTTP_request_parse_request_line line_len");
+        LOG_ERROR("HTTP_request_parse_request_line line_len");
         return false;
     }
 

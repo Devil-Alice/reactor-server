@@ -22,7 +22,7 @@ listener_t *listener_create(unsigned short port)
     if (sockfd == -1)
     {
 
-        perror("TCP_server_create socket");
+        LOG_ERROR("TCP_server_create socket");
         return NULL;
     }
 
@@ -31,7 +31,7 @@ listener_t *listener_create(unsigned short port)
     int ret = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     if (ret == -1)
     {
-        perror("TCP_server_create setsockopt");
+        LOG_ERROR("TCP_server_create setsockopt");
         return NULL;
     }
 
@@ -43,13 +43,13 @@ listener_t *listener_create(unsigned short port)
     ret = bind(sockfd, (struct sockaddr *)&sockaddr, sizeof(struct sockaddr_in));
     if (ret == -1)
     {
-        perror("TCP_server_create bind");
+        LOG_ERROR("TCP_server_create bind");
         return NULL;
     }
     ret = listen(sockfd, 128);
     if (ret == -1)
     {
-        perror("TCP_server_create listen");
+        LOG_ERROR("TCP_server_create listen");
         return NULL;
     }
 
@@ -71,7 +71,7 @@ int callback_TCP_server_accept(void *arg_TCP_server)
 
     if (client_fd == -1)
     {
-        perror("callback_TCP_server_accept");
+        LOG_ERROR("callback_TCP_server_accept");
         return -1;
     }
 

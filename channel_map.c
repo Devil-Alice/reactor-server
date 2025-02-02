@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "log.h"
 
 channel_map_t *channel_map_create(int capacity)
 {
@@ -16,7 +17,7 @@ int channel_map_expand(channel_map_t *channel_map, int capacity)
     channel_t **new_list = (channel_t **)realloc(channel_map->list, capacity * sizeof(channel_t*));
     if (new_list == NULL)
     {
-        perror("channel_map_expand realloc");
+        ("channel_map_expand realloc error");
         return -1;
     }
     channel_map->list = new_list;
@@ -32,7 +33,7 @@ int channel_map_add(channel_map_t *channel_map, int fd, channel_t *channel)
         int ret = channel_map_expand(channel_map, channel_map->capacity * 2);
         if (ret == -1)
         {
-            perror("channel_map_add");
+            LOG_ERROR("channel_map_add error");
             return -1;
         }
     }
@@ -45,7 +46,7 @@ int channel_map_remove(channel_map_t *channel_map, int fd)
 {
     if (fd > (channel_map->capacity - 1) || channel_map->list[fd] == NULL)
     {
-        perror("channel_map_remove");
+        LOG_ERROR("channel_map_remove error");
         return -1;
     }
 

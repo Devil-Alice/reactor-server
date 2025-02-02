@@ -25,7 +25,7 @@ int thread_pool_run(thread_pool_t *thread_pool)
     // 线程池必须由主线程启动，所以需要检查当前运行的是不是主线程
     if (thread_pool->main_event_loop->thread_id != pthread_self())
     {
-        perror("thread_pool_run");
+        LOG_ERROR("thread_pool_run");
         return -1;
     }
 
@@ -49,7 +49,7 @@ event_loop_t *thread_pool_get_next_event_loop(thread_pool_t *thread_pool)
     // 必须由主线程执行，所以需要检查当前运行的是不是主线程
     // if (thread_pool->main_event_loop->thread_id != pthread_self())
     // {
-    //     perror("thread_pool_run");
+    //     LOG_ERROR("thread_pool_run");
     //     return NULL;
     // }
 

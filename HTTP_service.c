@@ -64,7 +64,7 @@ int HTTP_service_process(HTTP_request_t *HTTP_request)
     // 检查
     if (HTTP_request == NULL)
     {
-        perror("HTTP_request_process_request");
+        LOG_ERROR("HTTP_request_process_request");
         return false;
     }
 
@@ -136,8 +136,13 @@ int HTTP_service_process_static(HTTP_request_t *HTTP_request, HTTP_response_t *H
     // 读取文件，写入buffer中
     int len = -1;
     char buf[1024] = {0};
+    long int total_len = 0;
     while ((len = read(fd, buf, sizeof(buf))) > 0)
+    {
         dynamic_buffer_append_data(HTTP_response->TCP_connection->write_buf, buf, len);
+        total_len += len;
+    }
+    
 
     return HTTP_STATUS_OK;
 }

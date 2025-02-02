@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "HTTP_request.h"
 #include "HTTP_response.h"
 #include "log.h"
@@ -52,7 +54,6 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
         LOG_DEBUG("TCP_connection_process_request error");
         return false;
     }
-    
     // 请求处理完毕,并且已经写入write_buffer
     TCP_connection->response_complete = 1;
 
@@ -84,6 +85,16 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
     LOG_DEBUG("%s read connection data", TCP_connection->event_loop->thread_name);
 
+    //  同时创建写数据的线程
+    pthread_t write_thread_id = -1;
+    // event_loop_process_event(event_loop, fd, CHANNEL_EVENT_WRITE);
+    arg_event_data_t *event_data_write = (arg_event_data_t *)malloc(sizeof(arg_event_data_t));
+    event_data_write->event_loop = TCP_connection->event_loop;
+    event_data_write->fd = TCP_connection->channel->fd;
+    event_data_write->type = CHANNEL_EVENT_WRITE;
+    pthread_create(&write_thread_id, NULL, threadfunc_event_loop_process_event, event_data_write);
+
+    // 开始读取
     char buf[1024] = {0};
     int len = 0;
     int total_len = 0;
@@ -107,7 +118,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
             }
             else
             {
-                perror("callback_TCP_connection_read");
+                LOG_ERROR("callback_TCP_connection_read");
                 return -1;
             }
         }
@@ -119,6 +130,9 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
 
     // 处理请求
     TCP_connection_process_request(TCP_connection);
+
+    // 最后等待写数据的线程执行完毕
+    pthread_join(write_thread_id, NULL);
 
     return total_len;
 }
@@ -137,6 +151,8 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
         LOG_DEBUG("callback_TCP_connection_write failed: read event is not triggered");
         return -1;
     }
+
+    int total_len = 0;
 
     while (1)
     {
@@ -157,9 +173,10 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
         char *buf = dynamic_buffer_availabel_read_data(TCP_connection->write_buf);
         // 计算大小，最多一次发送1024字节
         int buf_len = max_len < 1024 ? max_len : 1024;
-        int len = write(TCP_connection->channel->fd, buf, buf_len);
+        int len = send(TCP_connection->channel->fd, buf, buf_len, MSG_NOSIGNAL);
         // 读完之后将指针后移
         TCP_connection->write_buf->read_pos += buf_len;
+        total_len += len;
         pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
 
         // 当len为0时，跳过继续发送，同时如果response_complete那么才退出发送
@@ -171,6 +188,9 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
         }
         else if (len == -1)
         {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                continue;
+            LOG_ERROR("tcp connection write");
             return -1;
         }
         usleep(1);

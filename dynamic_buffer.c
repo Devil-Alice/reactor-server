@@ -13,7 +13,7 @@ dynamic_buffer_t *dynamic_buffer_create(int capasicy)
     dynamic_buffer_t *dynamic_buffer = (dynamic_buffer_t *)malloc(sizeof(dynamic_buffer_t));
     if (dynamic_buffer == NULL)
     {
-        perror("dynamic_buffer_create");
+        LOG_ERROR("dynamic_buffer_create error");
         return NULL;
     }
 
@@ -64,7 +64,7 @@ int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf
 {
     if (buf == NULL || dynamic_buffer == NULL)
     {
-        perror("dynamic_buffer_append_str");
+        LOG_ERROR("dynamic_buffer_append_str error");
         return -1;
     }
 
@@ -74,7 +74,7 @@ int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf
     int ret = dynamic_buffer_expand(dynamic_buffer, size);
     if (ret == -1)
     {
-        perror("dynamic_buffer_append_str");
+        LOG_ERROR("dynamic_buffer_append_str error");
         return -1;
     }
 
@@ -88,7 +88,7 @@ int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size)
 {
     if (dynamic_buffer == NULL)
     {
-        perror("dynamic_buffer_expand");
+        LOG_ERROR("dynamic_buffer_expand error");
         return -1;
     }
 
@@ -116,7 +116,7 @@ int dynamic_buffer_expand(dynamic_buffer_t *dynamic_buffer, int str_size)
     char *new_data = (char *)realloc(dynamic_buffer->data, dynamic_buffer->capacity + expand_size);
     if (new_data == NULL)
     {
-        perror("dynamic_buffer_expand");
+        LOG_ERROR("dynamic_buffer_expand");
         return -1;
     }
     // 扩容成功的话，在对扩容的部分初始化

@@ -1,5 +1,6 @@
 #include "worker_thread.h"
 #include <stdio.h>
+#include "log.h"
 
 int worker_thread_init(worker_thread_t *worker_thread, int num)
 {
@@ -32,7 +33,7 @@ void *threadfunc_event_loop_run(void *args)
     pthread_cond_signal(&worker_thread->cond);
     if (worker_thread->event_loop == NULL)
     {
-        perror("threadfunc_event_loop_run");
+        LOG_ERROR("threadfunc_event_loop_run");
         return (void *)-1;
     }
 

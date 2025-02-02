@@ -1,6 +1,7 @@
 #ifndef __LOG_H_
 #define __LOG_H_
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
 
@@ -15,7 +16,7 @@
         char time_buf[20];                                                           \
         strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", t);                \
         printf("[%s:%d]: In function \'%s\'\r\n", __FILE__, __LINE__, __FUNCTION__); \
-        printf("\t%s %s info: ", time_buf, type);                                      \
+        printf("\t%s %s info: ", time_buf, type);                                    \
         printf(fmt, ##__VA_ARGS__);                                                  \
         printf("\r\n");                                                              \
     } while (0);
@@ -24,6 +25,7 @@
     do                                    \
     {                                     \
         LOG("ERROR", fmt, ##__VA_ARGS__); \
+        perror("error no");             \
         exit(1);                          \
     } while (0);
 

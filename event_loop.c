@@ -40,7 +40,7 @@ event_loop_t *event_loop_create(char *thread_name)
     if (ret == -1)
     {
         free(event_loop);
-        perror("event_loop_create socketpair");
+        LOG_ERROR("event_loop_create socketpair");
         return NULL;
     }
 
@@ -105,7 +105,7 @@ int event_loop_add_channel(event_loop_t *event_loop, channel_t *channel)
     int ret = channel_map_add(channel_map, channel->fd, channel);
     if (ret == -1)
     {
-        perror("event_loop_add_channel");
+        LOG_ERROR("event_loop_add_channel");
         return -1;
     }
 
@@ -118,7 +118,7 @@ int event_loop_remove_channel(event_loop_t *event_loop, channel_t *channel)
     channel_map_t *channel_map = event_loop->channel_map;
     if (channel->fd > (channel_map->capacity - 1) || channel_map->list[channel->fd] == NULL)
     {
-        perror("event_loop_remove_channel");
+        LOG_ERROR("event_loop_remove_channel");
         return -1;
     }
     // 先从epoll树中移除
@@ -142,7 +142,7 @@ int event_loop_modify_channel(event_loop_t *event_loop, channel_t *channel)
     channel_map_t *channel_map = event_loop->channel_map;
     if (channel->fd > (channel_map->capacity - 1) || channel_map->list[channel->fd] == NULL)
     {
-        perror("event_loop_modify_channel");
+        LOG_ERROR("event_loop_modify_channel");
         return -1;
     }
     return event_loop->dispatcher->modify(event_loop, channel);
@@ -177,13 +177,13 @@ int event_loop_process_event(event_loop_t *event_loop, int fd, int type)
 {
     if (event_loop == NULL)
     {
-        perror("event_loop_process_event");
+        LOG_ERROR("event_loop_process_event");
         return -1;
     }
 
     if (fd < 0)
     {
-        perror("event_loop_process_event fd illegal");
+        LOG_ERROR("event_loop_process_event fd illegal");
         return -1;
     }
 
