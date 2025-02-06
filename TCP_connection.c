@@ -130,6 +130,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
 
     // 处理请求
     TCP_connection_process_request(TCP_connection);
+    LOG_DEBUG("response data build complete");
 
     // 最后等待写数据的线程执行完毕
     pthread_join(write_thread_id, NULL);
@@ -172,11 +173,14 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
 
         char *buf = dynamic_buffer_availabel_read_data(TCP_connection->write_buf);
         // 计算大小，最多一次发送1024字节
-        int buf_len = max_len < 1024 ? max_len : 1024;
+        int buf_len = max_len < 10240 ? max_len : 10240;
         int len = send(TCP_connection->channel->fd, buf, buf_len, MSG_NOSIGNAL);
         // 读完之后将指针后移
-        TCP_connection->write_buf->read_pos += buf_len;
-        total_len += len;
+        if (len >= 0)
+        {
+            TCP_connection->write_buf->read_pos += len;
+            total_len += len;
+        }
         pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
 
         // 当len为0时，跳过继续发送，同时如果response_complete那么才退出发送
@@ -188,12 +192,19 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
         }
         else if (len == -1)
         {
+            // 这两个错误是因为缓冲区已满导致的，所以不需要结束通信，而是等待一会继续发送
             if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                usleep(3);
                 continue;
-            LOG_ERROR("tcp connection write");
+            }
+            perror("err");
+            // send时设置msg_nosignal只是让内核不要在啊触发错误信号时杀死本程序进程，所以仍要处理错误码
+            //  LOG_ERROR("tcp connection write");
+            if (errno == EPIPE || errno == ECONNRESET)
+                break;
             return -1;
         }
-        usleep(1);
     }
 
     // 处理完成，客户端断开连接的操作应该在epollwait处检测

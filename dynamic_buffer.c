@@ -68,6 +68,7 @@ int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf
         return -1;
     }
 
+    pthread_mutex_lock(&dynamic_buffer->mutex);
     int size = buf_size;
     // 这里不判断长度是否足够，因为expand中会判断
     //  if (dynamic_buffer_available_write_size(dynamic_buffer) < size)
@@ -81,6 +82,7 @@ int dynamic_buffer_append_data(dynamic_buffer_t *dynamic_buffer, const char *buf
     // 数据拷贝
     memcpy(dynamic_buffer->data + dynamic_buffer->write_pos, buf, size);
     dynamic_buffer->write_pos += size;
+    pthread_mutex_unlock(&dynamic_buffer->mutex);
     return 0;
 }
 
@@ -164,7 +166,6 @@ int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *
     int size = 1024;
     while (1)
     {
-        pthread_mutex_lock(&dest_buffer->mutex);
         // 获取实际可读的大小
         int available_src_size = dynamic_buffer_available_read_size(src_buffer);
         if (available_src_size == 0)
@@ -181,7 +182,6 @@ int dynamic_buffer_append_from(dynamic_buffer_t *dest_buffer, dynamic_buffer_t *
             return -1;
         }
         src_buffer->read_pos += size;
-        pthread_mutex_unlock(&dest_buffer->mutex);
     }
 
     return 0;

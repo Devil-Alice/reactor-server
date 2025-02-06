@@ -82,8 +82,8 @@ int callback_TCP_server_accept(void *arg_TCP_server)
     flag |= O_NONBLOCK;
     fcntl(client_fd, F_SETFL, flag);
 
-    // 设置超时时间5s
-    struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
+    // 设置超时时间10s
+    struct timeval timeout = {.tv_sec = 10, .tv_usec = 0};
     setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     event_loop_t *next_event_loop = thread_pool_get_next_event_loop(TCP_server->thread_pool);
