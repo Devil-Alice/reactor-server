@@ -18,7 +18,7 @@ enum CHANNEL_TASK_TYPE
 typedef struct channel_task
 {
     channel_t *channel;
-    int task_type;
+    enum CHANNEL_TASK_TYPE task_type;
 } channel_task_t;
 
 /**
@@ -55,7 +55,7 @@ typedef struct arg_event_data
 {
     event_loop_t *event_loop;
     int fd;
-    enum CHANNEL_TASK_TYPE type;
+    enum CHANNEL_EVENT type;
 } arg_event_data_t;
 
 event_loop_t *event_loop_create_main(void);
