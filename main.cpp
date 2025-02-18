@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "TCP_server.h"
+#include "TCP_server.hpp"
 #include "log.h"
 
 // gcc *.c -o ./build/main -lpthread -std=gnu11
@@ -24,8 +24,8 @@ int main(int argc, char **argv)
     chdir(rcs_path);
 
     // 启动多反应堆模型
-    TCP_server_t *TCP_server = TCP_server_create(port, 2);
-    TCP_server_run(TCP_server);
+    TCP_server *tcp_server = new TCP_server(port, 2);
+    tcp_server->run(); 
 
     return 0;
 }

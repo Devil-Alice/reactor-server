@@ -1,4 +1,4 @@
-#include "TCP_connection.h"
+#include "TCP_connection.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,65 +6,62 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include "HTTP_request.h"
-#include "HTTP_response.h"
+#include "HTTP_request.hpp"
+#include "HTTP_response.hpp"
 #include "log.h"
-#include "HTTP_service.h"
+#include "HTTP_service.hpp"
 
-// 创建一个TCP_connection对象，创建对应的channel并添加任务
-TCP_connection_t *TCP_connection_create(int fd, event_loop_t *event_loop)
+TCP_connection::TCP_connection(int fd, Event_loop *event_loop)
 {
-    TCP_connection_t *TCP_connection = (TCP_connection_t *)malloc(sizeof(TCP_connection_t));
-    sprintf(TCP_connection->name, "conn-%d", fd);
-    TCP_connection->event_loop = event_loop;
-    TCP_connection->read_buf = dynamic_buffer_create(1024);
-    TCP_connection->write_buf = dynamic_buffer_create(1024);
+    name = "conn-" + std::to_string(fd);
+    this->event_loop = event_loop;
+    read_buf = new Dynamic_buffer(1024);
+    write_buf = new Dynamic_buffer(1024);
     // 创建一个channel，用于处理http请求以及回复http响应，这里将事件设置为读写事件
-    channel_t *channel = channel_create(fd, CHANNEL_EVENT_READ | CHANNEL_EVENT_WRITE, callback_TCP_connection_read, callback_TCP_connection_write, callback_TCP_connection_destroy, TCP_connection);
-    TCP_connection->channel = channel;
-    TCP_connection->response_complete = 0;
+    auto rcallback = std::bind(&TCP_connection::callback_read, this);
+    auto wcallback = std::bind(&TCP_connection::callback_write, this);
+    auto dcallback = std::bind(&TCP_connection::callback_destroy, this);
+    Channel *channel = new Channel(fd, (CHANNEL_EVENT)((int)CHANNEL_EVENT::READ | (int)CHANNEL_EVENT::WRITE), rcallback, wcallback, dcallback, this);
+    this->channel = channel;
+    response_complete = 0;
 
-    event_loop_add_task(event_loop, channel, CHANNEL_TASK_TYPE_ADD);
-    return TCP_connection;
+    event_loop->add_task(channel, CHANNEL_TASK_TYPE::ADD);
 }
 
-void TCP_connection_destroy(TCP_connection_t *TCP_connection)
+TCP_connection::~TCP_connection()
 {
-    if (TCP_connection == NULL)
-        return;
 
-    if (TCP_connection->read_buf != NULL)
-        dynamic_buffer_destroy(TCP_connection->read_buf);
+    if (read_buf != NULL)
+        delete read_buf;
 
-    if (TCP_connection->write_buf != NULL)
-        dynamic_buffer_destroy(TCP_connection->write_buf);
+    if (write_buf != NULL)
+        delete write_buf;
 
-    free(TCP_connection);
-    return;
+    // 注意：此时不能释放channel，虽然是本类创建的channel，但是在eventloop结束channl任务时还需要使用，所以是委托了callback_destroy进行后续的处理
 }
 
-bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
+bool TCP_connection::process_request()
 {
 
-    HTTP_request_t *HTTP_request = HTTP_request_create(TCP_connection);
+    HTTP_request *request = new HTTP_request(this);
 
-    int ret = HTTP_service_process(HTTP_request);
+    int ret = HTTP_service::instance().process(request);
     if (ret == -1)
     {
         LOG_DEBUG("TCP_connection_process_request error");
         return false;
     }
     // 请求处理完毕,并且已经写入write_buffer
-    TCP_connection->response_complete = 1;
+    response_complete = 1;
 
     // 此时write_buf中有数据了，但是TCP_connection又不能直接发送
     // 所以需要通过设置channel的读事件为启用，之后添加eventloop的任务
     // 这样dispatch函数检测到channel.fd的epollout事件就会调用channel的write回调函数进行发送响应的操作
-    // channel_enable_write_event(TCP_connection->channel, true);
-    // event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_MDOIFY);
+    // channel_enable_write_event(channel, true);
+    // event_loop_add_task(event_loop, channel, MDOIFY);
 
     // HTTP_request在此已经失去了作用，需要释放
-    HTTP_request_destroy(HTTP_request);
+    delete request;
 
     // ！注意！：此处的代码逻辑有一个潜在的问题：
     // 当前是通过修改channel的写事件，使得dispatcher在检测到epoll_out的时候会调用我们的写回调函数
@@ -76,22 +73,17 @@ bool TCP_connection_process_request(TCP_connection_t *TCP_connection)
     return true;
 }
 
-/**
- * @brief 将tcp连接的内容读取出来，，放入tcp_connection的red_buf，并将字符串长度传出
- * @return 返回读取到的字符串长度
- */
-int callback_TCP_connection_read(void *arg_TCP_connection)
+int TCP_connection::callback_read()
 {
-    TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
-    LOG_DEBUG("%s read connection data", TCP_connection->event_loop->thread_name);
+    LOG_DEBUG("TCP_connection(%s) read data", event_loop->get_thread_name().data());
 
     //  同时创建写数据的线程
     pthread_t write_thread_id = -1;
-    // event_loop_process_event(event_loop, fd, CHANNEL_EVENT_WRITE);
-    arg_event_data_t *event_data_write = (arg_event_data_t *)malloc(sizeof(arg_event_data_t));
-    event_data_write->event_loop = TCP_connection->event_loop;
-    event_data_write->fd = TCP_connection->channel->fd;
-    event_data_write->type = CHANNEL_EVENT_WRITE;
+    // event_loop_process_event(event_loop, fd, WRITE);
+    Arg_event_data *event_data_write = new Arg_event_data();
+    event_data_write->event_loop = event_loop;
+    event_data_write->fd = channel->get_fd();
+    event_data_write->type = CHANNEL_EVENT::WRITE;
     pthread_create(&write_thread_id, NULL, threadfunc_event_loop_process_event, event_data_write);
 
     // 开始读取
@@ -103,7 +95,7 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     // 读取函数加锁的地方在构建响应数据函数中：HTTP_response_build
     while (1)
     {
-        len = read(TCP_connection->channel->fd, buf, sizeof(buf) - 1);
+        len = read(channel->get_fd(), buf, sizeof(buf) - 1);
         if (len == 0)
         {
             // 关闭连接
@@ -124,13 +116,12 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
         }
 
         // 这里传入的buf虽然时栈数据，但是函数内部会将其通过memcpy复制到堆内存中
-        dynamic_buffer_append_data(TCP_connection->read_buf, buf, len);
+        read_buf->append_string(buf, len);
         total_len += len;
     }
 
     // 处理请求
-    TCP_connection_process_request(TCP_connection);
-    LOG_DEBUG("response data build complete");
+    process_request();
 
     // 最后等待写数据的线程执行完毕
     pthread_join(write_thread_id, NULL);
@@ -138,20 +129,19 @@ int callback_TCP_connection_read(void *arg_TCP_connection)
     return total_len;
 }
 
-int callback_TCP_connection_write(void *arg_TCP_connection)
+int TCP_connection::callback_write()
 {
-
-    TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
-    LOG_DEBUG("%s write connection data", TCP_connection->event_loop->thread_name);
+    // TCP_connection *tcp_connection = (TCP_connection *)arg_TCP_connection;
+    LOG_DEBUG("TCP_connection(%s) write data", event_loop->get_thread_name().data());
 
     // todo: 非常重要！！！！！！！！！！！！！！！！！
     //  有时epoll只检测到了写事件，但是还没检测到读事件，所以这里需要根据情况判断，如果可以单独执行写那么就可以继续执行
     // 如果不能写事件单独执行，例如本程序中的写事件，就会陷入死循环，并且eventloop会等待线程join，就导致本次请求永远无法响应，那么就需要
-    if (!(TCP_connection->channel->triggered_events & CHANNEL_EVENT_READ))
-    {
-        LOG_DEBUG("callback_TCP_connection_write failed: read event is not triggered");
-        return -1;
-    }
+    // if (!(channel->triggered_events & READ))
+    // {
+    //     LOG_DEBUG("callback_TCP_connection_write failed: read event is not triggered");
+    //     return -1;
+    // }
 
     int total_len = 0;
 
@@ -160,33 +150,33 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
         // todo: 此函数是在一个子线程中执行的，和读函数同时运行，所以要保证该函数在有数据的时候才写入
 
         // 读取函数加锁的地方在构建响应数据函数中：HTTP_response_build
-        pthread_mutex_lock(&TCP_connection->write_buf->mutex);
+        write_buf->get_mutex()->lock();
         // 取出写buf的可读数据
-        int max_len = dynamic_buffer_available_read_size(TCP_connection->write_buf);
-        if (max_len == 0 && !TCP_connection->response_complete)
+        int max_len = write_buf->available_read_size();
+        if (max_len == 0 && !response_complete)
         {
             // 没有可读数据，并且响应数据没有完成，此时：释放锁、跳过
-            pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
+            write_buf->get_mutex()->unlock();
             usleep(1);
             continue;
         }
 
-        char *buf = dynamic_buffer_availabel_read_data(TCP_connection->write_buf);
+        char *buf = write_buf->availabel_read_data();
         // 计算大小，最多一次发送1024字节
         int buf_len = max_len < 10240 ? max_len : 10240;
-        int len = send(TCP_connection->channel->fd, buf, buf_len, MSG_NOSIGNAL);
+        int len = send(channel->get_fd(), buf, buf_len, MSG_NOSIGNAL);
         // 读完之后将指针后移
-        if (len >= 0)
+        if (len > 0)
         {
-            TCP_connection->write_buf->read_pos += len;
+            write_buf->set_read_pos(write_buf->get_read_pos() + len);
             total_len += len;
         }
-        pthread_mutex_unlock(&TCP_connection->write_buf->mutex);
+        write_buf->get_mutex()->unlock();
 
         // 当len为0时，跳过继续发送，同时如果response_complete那么才退出发送
         if (len == 0)
         {
-            if (TCP_connection->response_complete)
+            if (response_complete)
                 break;
             continue;
         }
@@ -208,14 +198,13 @@ int callback_TCP_connection_write(void *arg_TCP_connection)
     }
 
     // 处理完成，客户端断开连接的操作应该在epollwait处检测
-    event_loop_add_task(TCP_connection->event_loop, TCP_connection->channel, CHANNEL_TASK_TYPE_REMOVE);
+    event_loop->add_task(channel, CHANNEL_TASK_TYPE::REMOVE);
     return 0;
 }
 
-int callback_TCP_connection_destroy(void *arg_TCP_connection)
+int TCP_connection::callback_destroy()
 {
-    TCP_connection_t *TCP_connection = (TCP_connection_t *)arg_TCP_connection;
+    // TCP_connection *tcp_connection = (TCP_connection *)arg_TCP_connection;
 
-    TCP_connection_destroy(TCP_connection);
     return 0;
 }
